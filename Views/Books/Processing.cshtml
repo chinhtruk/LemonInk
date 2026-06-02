@@ -1,0 +1,152 @@
+@model List<UserUploadBookItem>
+@using ZenRead.Entities
+@{
+    ViewData["Title"] = "Sách đang xử lý";
+    var processingCount = Model.Count(item => IsProcessing(item.ProcessingStatus));
+    var failedCount = Model.Count(item => HasFailedJob(item));
+}
+
+<div class="zen-container zen-my-library-page">
+    <section class="zen-upload-hero zen-my-library-hero">
+        <div class="zen-upload-copy">
+            <span class="zen-upload-kicker">Pipeline cá nhân</span>
+            <h1>Sách đang xử lý</h1>
+            <p>Theo dõi các sách upload đang chờ extract, tóm tắt, tạo audio hoặc cần retry.</p>
+        </div>
+        <div class="zen-my-library-stats">
+            <div>
+                <strong>@Model.Count</strong>
+                <span>Tổng sách</span>
+            </div>
+            <div>
+                <strong>@processingCount</strong>
+                <span>Đang chạy</span>
+            </div>
+            <div>
+                <strong>@failedCount</strong>
+                <span>Cần retry</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="zen-my-library-filter">
+        <div class="zen-library-filter-head zen-my-library-filter-head">
+            <span class="zen-library-filter-label">Bộ lọc sách cá nhân</span>
+            <span class="zen-library-filter-count">@Model.Count cuốn sách</span>
+        </div>
+        <div class="zen-filter-actions zen-my-library-filter-actions">
+            <a href="/Books/Upload" class="zen-filter-action zen-filter-action-primary">Tải sách mới</a>
+            <a href="/Books/MyLibrary?status=processing" class="zen-filter-action">Sách của tôi</a>
+        </div>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="zen-upload-empty">
+            <strong>Không có sách nào đang xử lý</strong>
+            <span>Khi bạn upload sách mới hoặc một job gặp lỗi, sách sẽ xuất hiện tại đây.</span>
+            <a href="/Books/Upload" class="zen-btn zen-btn-primary">Tải sách lên</a>
+        </div>
+    }
+    else
+    {
+        <div class="zen-my-library-list">
+            @foreach (var item in Model)
+            {
+                var isFailed = HasFailedJob(item);
+                var canRead = CanRead(item.ProcessingStatus);
+                var progress = ResolveProgress(item);
+
+                <article class="zen-my-library-item" data-upload-status-card data-book-id="@item.Id" data-processing-status="@item.ProcessingStatus">
+                    <div class="zen-my-library-main">
+                        <span class="zen-upload-file">@item.OriginalFileName</span>
+                        <h2>@item.Title</h2>
+                        <p>@item.AuthorName · @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                        <div class="zen-my-library-progress">
+                            <div class="zen-upload-progress-head">
+                                <strong data-upload-progress-percent>@progress%</strong>
+                                <small data-upload-estimate>@item.EstimatedTimeText</small>
+                            </div>
+                            <div class="zen-upload-progress-track">
+                                <span data-upload-progress-fill style="width: @progress%"></span>
+                            </div>
+                            <small data-upload-step>@item.LatestJobStep</small>
+                            <small class="zen-my-library-error" data-upload-error hidden="@(!isFailed || string.IsNullOrWhiteSpace(item.FailedReason))">@item.FailedReason</small>
+                        </div>
+                    </div>
+
+                    <div class="zen-my-library-side">
+                        <span class="zen-my-library-status @GetStatusClass(item.ProcessingStatus)" data-upload-status-label>
+                            @GetStatusText(item.ProcessingStatus)
+                        </span>
+                        <div class="zen-my-library-buttons">
+                            <a href="/Home/Read/@item.Id" class="zen-btn zen-btn-primary" data-upload-read-link hidden="@(!canRead)">Mở tóm tắt</a>
+
+                            <form method="post" action="/Books/RetryProcessing/@item.Id" data-upload-retry-form hidden="@(!isFailed)">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="zen-btn zen-btn-ghost">Retry</button>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</div>
+
+@functions {
+    private static bool CanRead(BookProcessingStatus status)
+    {
+        return status is BookProcessingStatus.SummaryReady or BookProcessingStatus.GeneratingAudio or BookProcessingStatus.Ready;
+    }
+
+    private static bool IsProcessing(BookProcessingStatus status)
+    {
+        return status is BookProcessingStatus.Uploaded
+            or BookProcessingStatus.ExtractingText
+            or BookProcessingStatus.Extracted
+            or BookProcessingStatus.Summarizing
+            or BookProcessingStatus.GeneratingAudio;
+    }
+
+    private static int ResolveProgress(UserUploadBookItem item)
+    {
+        return Math.Clamp(item.OverallProgressPercent, 0, 100);
+    }
+
+    private static string GetStatusClass(BookProcessingStatus status)
+    {
+        return status switch
+        {
+            BookProcessingStatus.Failed => "is-failed",
+            BookProcessingStatus.SummaryReady or BookProcessingStatus.Ready => "is-ready",
+            _ => "is-processing"
+        };
+    }
+
+    private static bool HasFailedJob(UserUploadBookItem item)
+    {
+        return item.ProcessingStatus == BookProcessingStatus.Failed ||
+            item.LatestJobStatus == ProcessingJobStatus.Failed;
+    }
+
+    private static string GetStatusText(BookProcessingStatus status)
+    {
+        return status switch
+        {
+            BookProcessingStatus.Uploaded => "Đã nhận file",
+            BookProcessingStatus.ExtractingText => "Đang trích xuất",
+            BookProcessingStatus.Extracted => "Đã trích xuất",
+            BookProcessingStatus.Summarizing => "Đang tóm tắt",
+            BookProcessingStatus.SummaryReady => "Đã có tóm tắt",
+            BookProcessingStatus.GeneratingAudio => "Đang tạo audio",
+            BookProcessingStatus.Ready => "Sẵn sàng",
+            BookProcessingStatus.Failed => "Có lỗi",
+            _ => "Đang chuẩn bị"
+        };
+    }
+}
+
+@section Scripts {
+    <script src="~/js/upload-status.js" asp-append-version="true"></script>
+}

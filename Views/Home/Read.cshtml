@@ -1,0 +1,412 @@
+@model BookSummary
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["ReadingTitle"] = Model.Title;
+    ViewData["ChatBookId"] = Model.Id;
+    ViewData["ChatBookTitle"] = Model.Title;
+    ViewData["ChatBookAuthor"] = Model.Author;
+    ViewData["ChatSuggestions"] = BuildChatSuggestions(Model);
+    var demoState = (Context.Request.Query["state"].ToString() ?? string.Empty).Trim().ToLowerInvariant();
+    var showLoading = demoState == "loading";
+    var showError = demoState == "error";
+    var showEmpty = demoState == "empty";
+    var chaptersCount = Model.Chapters.Count;
+    var takeawaysCount = Model.KeyTakeaways.Count;
+}
+
+@if (showLoading)
+{
+    <div class="zen-reading-container" data-reading-audio-status data-book-id="@Model.Id" data-audio-ready="@Model.IsAudioReady.ToString().ToLowerInvariant()">
+        @await Html.PartialAsync("_LoadingState", new UiStateViewModel
+        {
+            Kind = UiStateKind.Loading,
+            Kicker = "Đang mở sách",
+            Title = "Đang dựng không gian đọc",
+            Description = "Bìa sách, mục lục và nội dung chương sẽ hiện ra ngay khi bản tóm tắt được tải xong.",
+            SkeletonCards = 3
+        })
+    </div>
+}
+else if (showError)
+{
+    <div class="zen-reading-container">
+        @await Html.PartialAsync("_ErrorState", new UiStateViewModel
+        {
+            Kind = UiStateKind.Error,
+            Kicker = "Trang đọc",
+            Title = "Không tải được nội dung sách",
+            Description = "Có lỗi xảy ra trong quá trình mở cuốn sách này. Hãy thử tải lại hoặc quay về thư viện.",
+            Hint = "State này sẽ hữu ích cho lỗi API sách hoặc lỗi không tìm thấy tài nguyên.",
+            IconSvg = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"/></svg>",
+            PrimaryActionText = "Tải lại trang",
+            PrimaryActionUrl = "/Home/Read/1",
+            SecondaryActionText = "Về thư viện",
+            SecondaryActionUrl = "/Home/Library"
+        })
+    </div>
+}
+else if (showEmpty)
+{
+    <div class="zen-reading-container">
+        @await Html.PartialAsync("_EmptyState", new UiStateViewModel
+        {
+            Kind = UiStateKind.Empty,
+            Kicker = "Trang đọc",
+            Title = "Chưa có nội dung sách để hiển thị",
+            Description = "Khi backend hoàn thiện, đây sẽ là nơi render bìa, mục lục, từng chương và phần audio của cuốn sách.",
+            Hint = "Bạn có thể test preview bằng ?state=empty.",
+            IconSvg = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 19.5A2.5 2.5 0 0 1 6.5 17H20\"/><path d=\"M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\"/></svg>",
+            PrimaryActionText = "Về thư viện",
+            PrimaryActionUrl = "/Home/Library",
+            SecondaryActionText = "Xem đánh dấu",
+            SecondaryActionUrl = "/Home/Bookmarks"
+        })
+    </div>
+}
+else
+{
+    <div class="zen-reading-container" data-reading-audio-status data-book-id="@Model.Id" data-audio-ready="@Model.IsAudioReady.ToString().ToLowerInvariant()">
+        <aside class="zen-reading-toc-rail" aria-label="Mục lục sách">
+            <div class="zen-reading-toc-sticky">
+                <div class="zen-reading-aside-label">Mục lục</div>
+                <nav class="zen-reading-toc-list">
+                    @if (!string.IsNullOrWhiteSpace(Model.Overview))
+                    {
+                        <a href="#overview" class="zen-reading-toc-link" data-reading-toc-link>
+                            <span class="zen-reading-toc-title">
+                                <span class="toc-full">Tổng quan</span>
+                            </span>
+                            <span class="zen-reading-toc-meta">Tóm tắt chung</span>
+                        </a>
+                    }
+                    <a href="#takeaways" class="zen-reading-toc-link" data-reading-toc-link>
+                        <span class="zen-reading-toc-title">
+                            <span class="toc-full">Ý chính cần nhớ</span>
+                        </span>
+                        <span class="zen-reading-toc-meta">@takeawaysCount mục</span>
+                    </a>
+                    @foreach (var chapter in Model.Chapters)
+                    {
+                        <a href="#chapter-@chapter.Number" class="zen-reading-toc-link" data-reading-toc-link>
+                            <span class="zen-reading-toc-title">
+                                <span class="toc-full">@chapter.Title</span>
+                            </span>
+                            <span class="zen-reading-toc-meta">Chương @chapter.Number</span>
+                        </a>
+                    }
+                </nav>
+            </div>
+        </aside>
+
+        <div class="zen-reading-shell">
+            <main class="zen-reading-main">
+                <section class="zen-reading-hero">
+                    <div class="zen-reading-hero-copy">
+                        <div class="zen-book-kicker">@Model.Category</div>
+                        <h1 class="zen-book-title">@Model.Title</h1>
+                        <div class="zen-book-author">@Model.Author</div>
+
+                        <div class="zen-book-meta">
+                            <div class="zen-book-meta-item" data-reading-audio-meta>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <span data-reading-audio-meta-text>@(Model.IsAudioReady && Model.AudioDurationSeconds is > 0 ? $"{FormatDuration(Model.AudioDurationSeconds.Value)} audio" : $"{Model.ReadingTimeMinutes} phút đọc")</span>
+                            </div>
+                            <div class="zen-book-meta-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                @(Model.HasRating ? $"{Model.Rating.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)} / 5" : "Chưa có đánh giá")
+                            </div>
+                            <div class="zen-book-meta-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                                @chaptersCount chương
+                            </div>
+                        </div>
+
+                        <p class="zen-reading-lead">@Model.Introduction</p>
+
+                        <div class="zen-reading-hero-actions" data-reading-audio-action>
+                            @if (Model.IsAudioReady && !string.IsNullOrWhiteSpace(Model.AudioUrl))
+                            {
+                                <button class="zen-btn zen-btn-primary zen-reading-action" type="button" data-audio-toggle data-reading-audio-button>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    <span data-reading-audio-button-text>Nghe Audio</span>
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="zen-btn zen-btn-ghost zen-reading-action is-audio-pending" type="button" disabled title="Audio sẽ xuất hiện sau khi job TTS hoàn tất." data-reading-audio-button>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>
+                                    <span data-reading-audio-button-text>Audio đang xử lý</span>
+                                </button>
+                            }
+                            <button class="zen-btn zen-btn-ghost zen-reading-action" type="button" data-chat-open>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+                                Hỏi đáp AI
+                            </button>
+                            <button class="zen-btn zen-btn-ghost zen-reading-action" type="button" data-bookmark-toggle data-book-id="@Model.Id">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                                <span data-bookmark-label>Đánh dấu</span>
+                            </button>
+                            <button class="zen-btn zen-btn-ghost zen-reading-action zen-reading-preferences-trigger" type="button" data-reading-preferences-open aria-haspopup="dialog" aria-controls="zenReadingPreferencesPanel">
+                                <span aria-hidden="true">Aa</span>
+                                Tùy chỉnh đọc
+                            </button>
+                        </div>
+
+                        <div class="zen-reading-audio-status-panel @(Model.IsAudioReady ? "is-hidden" : "")" data-reading-audio-status-panel aria-live="polite">
+                            <span class="zen-reading-audio-status-dot" aria-hidden="true"></span>
+                            <span data-reading-audio-status-text>Audio đang được tạo và sẽ tự xuất hiện khi sẵn sàng.</span>
+                            <span class="zen-reading-audio-status-progress" data-reading-audio-status-progress></span>
+                        </div>
+                    </div>
+
+                    <aside class="zen-reading-cover-rail" aria-label="Bìa sách">
+                        <div class="zen-reading-cover-card">
+                            <img src="@Model.CoverUrl" alt="Bìa sách @Model.Title" class="zen-reading-cover-image" />
+                        </div>
+                    </aside>
+                </section>
+
+                <article class="zen-chapter-content">
+                    @if (!string.IsNullOrWhiteSpace(Model.Overview))
+                    {
+                        <section class="zen-chapter-section zen-reading-section zen-reading-section-overview" id="overview" data-reading-section="overview">
+                            <header class="zen-reading-section-head">
+                                <div>
+                                    <div class="zen-reading-section-eyebrow">Tổng quan</div>
+                                    <h2 class="zen-chapter-title">Bức tranh chung của cuốn sách</h2>
+                                </div>
+                                <span class="zen-reading-section-chip">Mở đầu</span>
+                            </header>
+                            <div class="zen-reading-section-body">
+                                @Html.Raw(Model.Overview)
+                            </div>
+                        </section>
+
+                        <div class="zen-chapter-divider"></div>
+                    }
+
+                    @if (Model.KeyTakeaways.Any())
+                    {
+                        <section class="zen-takeaways zen-reading-section zen-reading-section-takeaways" id="takeaways" data-reading-section="takeaways">
+                            <header class="zen-reading-section-head">
+                                <div>
+                                    <div class="zen-reading-section-eyebrow">Ghi nhớ nhanh</div>
+                                    <h2 class="zen-chapter-title">Ý chính cần nhớ</h2>
+                                </div>
+                                <span class="zen-reading-section-chip">@takeawaysCount mục</span>
+                            </header>
+                            <ol>
+                                @foreach (var takeaway in Model.KeyTakeaways)
+                                {
+                                    <li>@takeaway</li>
+                                }
+                            </ol>
+                        </section>
+
+                        <div class="zen-chapter-divider"></div>
+                    }
+
+                    @for (var i = 0; i < Model.Chapters.Count; i++)
+                    {
+                        var chapter = Model.Chapters[i];
+                        <section class="zen-chapter-section zen-reading-section zen-reading-section-chapter" id="chapter-@chapter.Number" data-summary-section-id="@chapter.Id" data-reading-section="chapter">
+                            <header class="zen-reading-section-head zen-reading-chapter-head">
+                                <div>
+                                    <div class="zen-chapter-kicker">Chương @chapter.Number</div>
+                                    <h2 class="zen-chapter-title">@chapter.Title</h2>
+                                </div>
+                                <span class="zen-reading-section-chip">@(Math.Max(1, chapter.ReadingTimeMinutes)) phút</span>
+                            </header>
+                            <div class="zen-reading-section-body">
+                                @Html.Raw(chapter.Content)
+                            </div>
+                        </section>
+
+                        if (i < Model.Chapters.Count - 1)
+                        {
+                            <div class="zen-chapter-divider"></div>
+                        }
+                    }
+                </article>
+            </main>
+        </div>
+
+        <div class="zen-reading-preferences-overlay" data-reading-preferences-overlay hidden></div>
+        <aside id="zenReadingPreferencesPanel" class="zen-reading-preferences-panel" data-reading-preferences-panel aria-label="Tùy chỉnh đọc" aria-hidden="true" hidden>
+            <div class="zen-reading-preferences-header">
+                <div>
+                    <div class="zen-reading-aside-label">Không gian đọc</div>
+                    <h2>Tùy chỉnh đọc</h2>
+                </div>
+                <button class="zen-reading-preferences-close" type="button" data-reading-preferences-close aria-label="Đóng tùy chỉnh đọc">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="zen-reading-preferences-body">
+                <label class="zen-reading-setting">
+                    <span>
+                        <strong>Cỡ chữ</strong>
+                        <small>Kích thước chữ trong phần nội dung</small>
+                    </span>
+                    <select class="zen-select" data-reader-setting="fontSize">
+                        <option value="small">Nhỏ</option>
+                        <option value="medium">Vừa</option>
+                        <option value="large">Lớn</option>
+                    </select>
+                </label>
+
+                <label class="zen-reading-setting">
+                    <span>
+                        <strong>Khoảng cách dòng</strong>
+                        <small>Độ thoáng giữa các dòng văn bản</small>
+                    </span>
+                    <select class="zen-select" data-reader-setting="lineHeight">
+                        <option value="compact">Chặt</option>
+                        <option value="comfortable">Thoải mái</option>
+                        <option value="airy">Rộng</option>
+                    </select>
+                </label>
+
+                <label class="zen-reading-setting">
+                    <span>
+                        <strong>Chiều rộng nội dung</strong>
+                        <small>Độ rộng tối đa của vùng đọc</small>
+                    </span>
+                    <select class="zen-select" data-reader-setting="width">
+                        <option value="narrow">Hẹp</option>
+                        <option value="medium">Vừa</option>
+                        <option value="wide">Rộng</option>
+                    </select>
+                </label>
+
+                @if (Model.IsAudioReady && !string.IsNullOrWhiteSpace(Model.AudioUrl))
+                {
+                    <label class="zen-reading-setting">
+                        <span>
+                            <strong>Tốc độ audio</strong>
+                            <small>Đồng bộ với trình phát audio</small>
+                        </span>
+                        <select class="zen-select" data-reader-setting="audioSpeed">
+                            <option value="0.75">0.75x</option>
+                            <option value="1">1x</option>
+                            <option value="1.25">1.25x</option>
+                            <option value="1.5">1.5x</option>
+                            <option value="2">2x</option>
+                        </select>
+                    </label>
+                }
+            </div>
+
+            <button class="zen-btn zen-btn-ghost zen-reading-preferences-reset" type="button" data-reading-preferences-reset>
+                Đặt lại mặc định
+            </button>
+        </aside>
+    </div>
+
+}
+
+@if (!showLoading && !showError && !showEmpty && Model.IsAudioReady && !string.IsNullOrWhiteSpace(Model.AudioUrl))
+{
+    <div data-reading-audio-player-mount>
+        @await Html.PartialAsync("_AudioPlayer", Model)
+    </div>
+}
+else if (!showLoading && !showError && !showEmpty)
+{
+    <div data-reading-audio-player-mount></div>
+}
+
+@section Scripts {
+    <script src="~/js/audio-player.js" asp-append-version="true"></script>
+    <script src="~/js/reading-audio-realtime.js" asp-append-version="true"></script>
+    <script src="~/js/reading-toc.js" asp-append-version="true"></script>
+    <script src="~/js/reading-library.js" asp-append-version="true"></script>
+    <script src="~/js/reading-preferences.js" asp-append-version="true"></script>
+}
+
+@functions {
+    private static List<ChatSuggestion> BuildChatSuggestions(BookSummary book)
+    {
+        var suggestions = new List<ChatSuggestion>
+        {
+            new()
+            {
+                Label = "Tóm tắt nhanh",
+                Prompt = $"Tóm tắt \"{book.Title}\" trong 3 ý chính dễ nhớ."
+            },
+            new()
+            {
+                Label = "Bài học chính",
+                Prompt = $"Từ \"{book.Title}\", 3 bài học quan trọng nhất là gì? Mỗi bài học kèm một ví dụ ngắn."
+            }
+        };
+
+        var applicationPrompt = BuildApplicationPrompt(book);
+        suggestions.Add(new ChatSuggestion
+        {
+            Label = BuildApplicationLabel(book.Category),
+            Prompt = applicationPrompt
+        });
+
+        var firstTakeaway = book.KeyTakeaways.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item));
+        if (!string.IsNullOrWhiteSpace(firstTakeaway))
+        {
+            suggestions[1] = new ChatSuggestion
+            {
+                Label = "Điểm cần nhớ",
+                Prompt = $"Phân tích ý quan trọng này trong \"{book.Title}\": {firstTakeaway}. Vì sao nó đáng nhớ?"
+            };
+        }
+
+        return suggestions
+            .Where(suggestion => !string.IsNullOrWhiteSpace(suggestion.Label) && !string.IsNullOrWhiteSpace(suggestion.Prompt))
+            .Take(3)
+            .ToList();
+    }
+
+    private static string BuildApplicationLabel(string category)
+    {
+        var cleanCategory = (category ?? string.Empty).Trim().ToLowerInvariant();
+
+        if (cleanCategory.Contains("kinh doanh") || cleanCategory.Contains("startup") || cleanCategory.Contains("lãnh đạo"))
+        {
+            return "Ứng dụng công việc";
+        }
+
+        if (cleanCategory.Contains("tâm lý"))
+        {
+            return "Nhận diện đời sống";
+        }
+
+        if (cleanCategory.Contains("tự lực") || cleanCategory.Contains("thói quen"))
+        {
+            return "Thực hành hôm nay";
+        }
+
+        return "Áp dụng thực tế";
+    }
+
+    private static string BuildApplicationPrompt(BookSummary book)
+    {
+        var firstChapter = book.Chapters
+            .Where(chapter => !string.IsNullOrWhiteSpace(chapter.Title))
+            .OrderBy(chapter => chapter.Number)
+            .FirstOrDefault();
+
+        if (firstChapter is not null)
+        {
+            return $"Từ \"{book.Title}\", đặc biệt phần \"{firstChapter.Title}\", tôi nên áp dụng vào đời sống hoặc công việc như thế nào? Gợi ý 3 hành động cụ thể.";
+        }
+
+        return $"Từ \"{book.Title}\", tôi nên áp dụng vào đời sống hoặc công việc như thế nào? Gợi ý 3 hành động cụ thể.";
+    }
+
+    private static string FormatDuration(int durationSeconds)
+    {
+        var duration = TimeSpan.FromSeconds(Math.Max(1, durationSeconds));
+        return duration.TotalHours >= 1
+            ? duration.ToString(@"h\:mm\:ss")
+            : duration.ToString(@"mm\:ss");
+    }
+}

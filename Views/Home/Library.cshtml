@@ -1,0 +1,203 @@
+@model BookSearchResult
+@{
+    ViewData["Title"] = "Thư viện";
+    var isLoggedIn = User.Identity?.IsAuthenticated == true;
+    var demoState = (Context.Request.Query["state"].ToString() ?? string.Empty).Trim().ToLowerInvariant();
+    var showLoading = demoState == "loading";
+    var showError = demoState == "error";
+    var books = Model.Books;
+    var showEmpty = demoState == "empty" || (!showLoading && !showError && books.Count == 0);
+    var categoriesCount = Model.Categories.Where(category => category != "Tất cả").Count();
+    var avgReadingMinutes = books.Count > 0 ? Math.Round(books.Average(book => book.ReadingTimeMinutes)) : 0;
+    var selectedQuery = Context.Request.Query["query"].ToString();
+    var selectedCategory = Context.Request.Query["category"].ToString();
+    var selectedSort = Context.Request.Query["sort"].ToString();
+    var selectedSource = Context.Request.Query["source"].ToString();
+    var selectedStatus = Context.Request.Query["status"].ToString();
+    selectedCategory = string.IsNullOrWhiteSpace(selectedCategory) ? "Tất cả" : selectedCategory;
+    selectedSort = string.IsNullOrWhiteSpace(selectedSort) ? "default" : selectedSort;
+    selectedSource = string.IsNullOrWhiteSpace(selectedSource) ? "all" : selectedSource;
+    selectedStatus = string.IsNullOrWhiteSpace(selectedStatus) ? "all" : selectedStatus;
+}
+
+<div class="zen-container zen-library-page">
+
+    @if (showLoading)
+    {
+        @await Html.PartialAsync("_LoadingState", new UiStateViewModel
+        {
+            Kind = UiStateKind.Loading,
+            Kicker = "Thư viện sách",
+            Title = "Đang nạp danh sách sách",
+            Description = "LemonInk đang chuẩn bị những cuốn sách phù hợp nhất để bạn bắt đầu đọc ngay khi dữ liệu sẵn sàng.",
+            SkeletonCards = 8
+        })
+    }
+    else if (showError)
+    {
+        @await Html.PartialAsync("_ErrorState", new UiStateViewModel
+        {
+            Kind = UiStateKind.Error,
+            Kicker = "Lỗi thư viện",
+            Title = "Không tải được danh sách sách",
+            Description = "Có vẻ dữ liệu thư viện đang tạm thời chưa sẵn sàng. Hãy thử tải lại sau hoặc quay về trang chủ.",
+            Hint = "Sau này backend hoàn thành, trạng thái này sẽ hiển thị khi API sách gặp sự cố.",
+            IconSvg = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"/></svg>",
+            PrimaryActionText = "Tải lại trang",
+            PrimaryActionUrl = "/Home/Library",
+            SecondaryActionText = "Về trang chủ",
+            SecondaryActionUrl = "/"
+        })
+    }
+    else if (showEmpty)
+    {
+        @await Html.PartialAsync("_EmptyState", new UiStateViewModel
+        {
+            Kind = UiStateKind.Empty,
+            Kicker = "Thư viện sách",
+            Title = "Chưa có cuốn sách nào để hiển thị",
+            Description = "Khi backend sẵn sàng, đây sẽ là nơi hiển thị toàn bộ sách được tóm tắt, sắp xếp theo thể loại, độ dài và mức độ phù hợp.",
+            Hint = "Bạn có thể xem thử các view này bằng cách thêm ?state=empty vào URL.",
+            IconSvg = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 19.5A2.5 2.5 0 0 1 6.5 17H20\"/><path d=\"M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\"/></svg>",
+            PrimaryActionText = "Quay về trang chủ",
+            PrimaryActionUrl = "/",
+            SecondaryActionText = "Đánh dấu",
+            SecondaryActionUrl = "/Home/Bookmarks"
+        })
+    }
+    else
+    {
+        <div class="zen-library-meta-line">
+            <span>@Model.FilteredCount cuốn sách</span>
+            <span class="zen-meta-divider"></span>
+            <span>@categoriesCount thể loại</span>
+            <span class="zen-meta-divider"></span>
+            <span>@avgReadingMinutes phút đọc trung bình</span>
+        </div>
+
+        <div class="zen-library-filters">
+            <div class="zen-library-toolbar">
+                <div class="zen-library-search">
+                    <svg class="zen-library-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="search" class="zen-library-search-input" data-library-search value="@selectedQuery" placeholder="Tìm sách, tác giả hoặc chủ đề..." aria-label="Tìm sách, tác giả hoặc chủ đề" />
+                </div>
+
+                @if (isLoggedIn)
+                {
+                    <div class="zen-filter-actions-group">
+                        <a href="/Books/Upload" class="zen-filter-action-icon zen-filter-action-primary" data-tooltip="Tải sách cá nhân">
+                            <svg viewBox="0 0 24 24"><path d="M12 3v12"></path><path d="m7 8 5-5 5 5"></path><path d="M5 15v3a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-3"></path></svg>
+                        </a>
+                        <div class="zen-action-divider"></div>
+                        <a href="/Books/MyLibrary" class="zen-filter-action-icon" data-tooltip="Sách của tôi">
+                            <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                        </a>
+                        <div class="zen-action-divider"></div>
+                        <a href="/Books/Processing" class="zen-filter-action-icon" data-tooltip="Đang xử lý">
+                            <svg viewBox="0 0 24 24"><path d="M12 2v4"></path><path d="M12 18v4"></path><path d="m4.93 4.93 2.83 2.83"></path><path d="m16.24 16.24 2.83 2.83"></path><path d="M2 12h4"></path><path d="M18 12h4"></path></svg>
+                        </a>
+                    </div>
+                }
+
+                <div class="zen-filter-selects-group">
+                    <div class="zen-filter-select-wrapper">
+                        <span class="zen-filter-label">Thể loại:</span>
+                        <select class="zen-select zen-filter-select" data-library-category-select title="Thể loại">
+                            @foreach (var category in Model.Categories)
+                            {
+                                if (category == selectedCategory)
+                                {
+                                    <option value="@category" selected>@category</option>
+                                }
+                                else
+                                {
+                                    <option value="@category">@category</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="zen-filter-select-wrapper">
+                        <span class="zen-filter-label">Sắp xếp:</span>
+                        <select class="zen-select zen-filter-select" data-library-sort title="Sắp xếp">
+                            <option value="default" selected="@(selectedSort == "default")">Mới nhất</option>
+                            <option value="rating-desc" selected="@(selectedSort == "rating-desc")">Điểm cao nhất</option>
+                            <option value="time-asc" selected="@(selectedSort == "time-asc")">Đọc nhanh nhất</option>
+                            <option value="title-asc" selected="@(selectedSort == "title-asc")">Tên A-Z</option>
+                        </select>
+                    </div>
+
+                    <div class="zen-filter-select-wrapper">
+                        <span class="zen-filter-label">Nguồn:</span>
+                        <select class="zen-select zen-filter-select" data-library-source title="Nguồn">
+                            <option value="all" selected="@(selectedSource == "all")">Tất cả</option>
+                            <option value="curated" selected="@(selectedSource == "curated")">LemonInk</option>
+                            <option value="upload" selected="@(selectedSource == "upload")">Sách của tôi</option>
+                        </select>
+                    </div>
+
+                    <div class="zen-filter-select-wrapper">
+                        <span class="zen-filter-label">Trạng thái:</span>
+                        <select class="zen-select zen-filter-select" data-library-status title="Trạng thái">
+                            <option value="all" selected="@(selectedStatus == "all")">Tất cả</option>
+                            <option value="ready" selected="@(selectedStatus == "ready")">Sẵn sàng</option>
+                            <option value="processing" selected="@(selectedStatus == "processing")">Đang xử lý</option>
+                            <option value="failed" selected="@(selectedStatus == "failed")">Có lỗi</option>
+                        </select>
+                    </div>
+
+                    <button type="button" class="zen-filter-reset-btn" data-library-reset aria-label="Đặt lại bộ lọc" data-tooltip="Đặt lại bộ lọc">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M3 12a9 9 0 1 0 3-6.7"></path>
+                            <path d="M3 4v6h6"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="zen-book-grid zen-library-grid" data-library-grid data-library-endpoint="/Books/Search">
+            @for (var index = 0; index < books.Count; index++)
+            {
+                var book = books[index];
+                <a href="@(book.CanRead ? $"/Books/Detail/{book.Id}" : "/Books/Processing")"
+                   class="zen-book-card"
+                   data-library-card
+                   data-title="@book.Title"
+                   data-author="@book.Author"
+                   data-category="@book.Category"
+                   data-source="@book.Source"
+                   data-status="@book.Status"
+                   data-rating="@book.Rating.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                   data-has-rating="@book.HasRating.ToString().ToLowerInvariant()"
+                   data-reading-time="@book.ReadingTimeMinutes"
+                   data-index="@index">
+                    <div class="zen-book-card-cover" style="background: @book.CoverGradient;">
+                        <img src="@book.CoverUrl" alt="Bìa sách @book.Title" class="zen-book-card-cover-image" loading="lazy" />
+                    </div>
+                    <span class="zen-book-card-category">@book.Category</span>
+                    <h3 class="zen-book-card-title">@book.Title</h3>
+                    <p class="zen-book-card-author">@book.Author</p>
+                    <div class="zen-book-card-meta">
+                        <span>@book.ReadingTimeMinutes phút đọc</span>
+                        <span>@(book.CanRead ? (book.HasRating ? $"{book.Rating:0.0}/5" : "Chưa có đánh giá") : "Đang xử lý")</span>
+                    </div>
+                </a>
+            }
+        </div>
+
+        <nav class="zen-library-pagination" data-library-pagination aria-label="Phân trang thư viện"></nav>
+
+        <div class="zen-empty-state" data-library-empty hidden>
+            <div class="zen-empty-state-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            <h2>Không tìm thấy sách phù hợp</h2>
+            <p>Thử đổi từ khóa, thể loại hoặc cách sắp xếp để xem nhiều lựa chọn hơn.</p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/library.js"></script>
+}

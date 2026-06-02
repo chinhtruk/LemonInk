@@ -1,0 +1,110 @@
+@model AdminUsersPageViewModel
+@{
+    ViewData["Title"] = "Người dùng";
+    ViewData["AdminActive"] = "users";
+    Layout = "_AdminLayout";
+}
+
+@await Html.PartialAsync("_AdminSidebar")
+
+<div class="admin-main" data-admin-realtime="users">
+    <div class="admin-realtime-token" hidden>
+        <form>@Html.AntiForgeryToken()</form>
+    </div>
+
+    <div class="admin-topbar">
+        <div>
+            <h1 class="admin-topbar-title">Người dùng</h1>
+            <p class="admin-topbar-subtitle">Theo dõi tài khoản, role và hoạt động thư viện cá nhân.</p>
+        </div>
+        <div class="admin-topbar-actions">
+            <a href="/Admin" class="zen-btn zen-btn-ghost">
+                <svg class="admin-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Tổng user</span></div>
+            <div class="admin-stat-value" data-admin-stat="totalUsers">@Model.TotalUsers</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Admin</span></div>
+            <div class="admin-stat-value" data-admin-stat="adminCount">@Model.AdminCount</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Reader</span></div>
+            <div class="admin-stat-value" data-admin-stat="readerCount">@Model.ReaderCount</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Upload sách</span></div>
+            <div class="admin-stat-value" data-admin-stat="uploadedBooksCount">@Model.Users.Sum(user => user.UploadedBooksCount)</div>
+        </div>
+    </div>
+
+    <div class="admin-table-card">
+        <div class="admin-table-header">
+            <span class="admin-table-title">Danh sách user</span>
+            <span class="admin-muted-count" data-admin-users-count>@Model.Users.Count tài khoản</span>
+        </div>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Tài khoản</th>
+                    <th>Role</th>
+                    <th>Sách upload</th>
+                    <th>Bookmark</th>
+                    <th>Progress</th>
+                    <th>Tạo lúc</th>
+                    <th>Login gần nhất</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody data-admin-users-body>
+                @foreach (var user in Model.Users)
+                {
+                    <tr>
+                        <td class="title-cell">
+                            @(string.IsNullOrWhiteSpace(user.FullName) ? user.Email : user.FullName)
+                            <div class="admin-row-subtitle">@user.Email</div>
+                        </td>
+                        <td>
+                            @foreach (var role in user.Roles.Split(", ", StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                <span class="admin-status-badge @(role == "Admin" ? "published" : "queued")">@role</span>
+                            }
+                        </td>
+                        <td>@user.UploadedBooksCount</td>
+                        <td>@user.BookmarksCount</td>
+                        <td>@user.ReadingProgressCount</td>
+                        <td>@user.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            @(user.LastLoginAt.HasValue
+                                ? user.LastLoginAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                : "Chưa có")
+                        </td>
+                        <td class="admin-actions-cell">
+                            @if (!user.CanDelete)
+                            {
+                                <span class="admin-muted-count">@(string.IsNullOrWhiteSpace(user.DeleteUnavailableReason) ? "Không thể xoá" : user.DeleteUnavailableReason)</span>
+                            }
+                            else
+                            {
+                                <form asp-controller="Admin"
+                                      asp-action="DeleteUser"
+                                      asp-route-id="@user.Id"
+                                      method="post"
+                                      onsubmit="return confirm('Xoá tài khoản này? Toàn bộ sách cá nhân, tiến độ đọc, bookmark, ghi chú, chat và review của tài khoản cũng sẽ bị xoá.');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="zen-btn zen-btn-danger">Xoá</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

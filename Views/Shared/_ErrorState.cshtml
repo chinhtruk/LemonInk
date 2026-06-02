@@ -1,0 +1,30 @@
+@model UiStateViewModel
+
+<section class="zen-state zen-state--error">
+    <div class="zen-state-icon zen-state-icon--error">
+        @Html.Raw(Model.IconSvg)
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Kicker))
+    {
+        <div class="zen-state-kicker">@Model.Kicker</div>
+    }
+    <h2>@Model.Title</h2>
+    <p>@Model.Description</p>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Hint))
+    {
+        <div class="zen-state-hint">@Model.Hint</div>
+    }
+
+    <div class="zen-state-actions">
+        @if (!string.IsNullOrWhiteSpace(Model.PrimaryActionText) && !string.IsNullOrWhiteSpace(Model.PrimaryActionUrl))
+        {
+            <a href="@Model.PrimaryActionUrl" class="zen-btn zen-btn-primary">@Model.PrimaryActionText</a>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.SecondaryActionText) && !string.IsNullOrWhiteSpace(Model.SecondaryActionUrl))
+        {
+            <a href="@Model.SecondaryActionUrl" class="zen-btn zen-btn-ghost">@Model.SecondaryActionText</a>
+        }
+    </div>
+</section>

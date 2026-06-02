@@ -1,0 +1,312 @@
+@using System.Globalization
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["AdminActive"] = "dashboard";
+    Layout = "_AdminLayout";
+}
+
+@await Html.PartialAsync("_AdminSidebar")
+
+<!-- Main Content -->
+<div class="admin-main" data-admin-realtime="dashboard">
+    <!-- Top Bar -->
+    <div class="admin-topbar">
+        <div>
+            <h1 class="admin-topbar-title">Dashboard</h1>
+            <p class="admin-topbar-subtitle">Tổng quan hoạt động nền tảng LemonInk</p>
+        </div>
+        <div class="admin-topbar-actions">
+            <a href="/Admin/ProcessingJobs" class="zen-btn zen-btn-ghost">
+                <svg class="admin-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Xem jobs
+            </a>
+            <a href="/Admin/Books" class="zen-btn zen-btn-ghost">
+                <svg class="admin-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Quản lý sách
+            </a>
+            <a href="/Admin/Books/CreateCurated" class="zen-btn zen-btn-primary">
+                <svg class="admin-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Tạo sách
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+            <div class="admin-stat-header">
+                <span class="admin-stat-label">Tổng sách</span>
+                <div class="admin-stat-icon books">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </div>
+            </div>
+            <div class="admin-stat-value" data-admin-stat="totalBooks">@Model.Stats.TotalBooks.ToString("N0")</div>
+            <div class="admin-stat-change positive">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+                Dữ liệu thật từ DB
+            </div>
+        </div>
+
+        <div class="admin-stat-card">
+            <div class="admin-stat-header">
+                <span class="admin-stat-label">Người dùng</span>
+                <div class="admin-stat-icon users">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                </div>
+            </div>
+            <div class="admin-stat-value" data-admin-stat="totalUsers">@Model.Stats.TotalUsers.ToString("N0")</div>
+            <div class="admin-stat-change positive">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+                <span data-decimal data-admin-stat="growthPercent">@Model.Stats.GrowthPercentFormatted</span>% sách có audio
+            </div>
+        </div>
+
+        <div class="admin-stat-card">
+            <div class="admin-stat-header">
+                <span class="admin-stat-label">Đánh giá trung bình</span>
+                <div class="admin-stat-icon rating">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+            </div>
+            <div class="admin-stat-value"><span data-decimal data-admin-stat="avgRating">@Model.Stats.AvgRatingFormatted</span></div>
+            <div class="admin-stat-change positive">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+                <span data-decimal data-admin-stat="completionRate">@Model.Stats.CompletionRateFormatted</span>% sách có thể đọc
+            </div>
+        </div>
+
+        <div class="admin-stat-card">
+            <div class="admin-stat-header">
+                <span class="admin-stat-label">Tiến độ đọc 30 ngày</span>
+                <div class="admin-stat-icon reads">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+            </div>
+            <div class="admin-stat-value" data-admin-stat="monthlyReads">@Model.Stats.MonthlyReads.ToString("N0")</div>
+            <div class="admin-stat-change positive">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+                Bản ghi progress cập nhật gần đây
+            </div>
+        </div>
+    </div>
+
+    <!-- Operations Dashboard -->
+    <section class="admin-ops-section" data-admin-ops>
+        <div class="admin-section-heading">
+            <div>
+                <h2>Vận hành AI pipeline</h2>
+                <p>Theo dõi job, quota model và tốc độ xử lý trong 24 giờ gần nhất.</p>
+            </div>
+            <a href="/Admin/AiHealth" class="zen-btn zen-btn-ghost">AI health</a>
+        </div>
+
+        <div class="admin-ops-grid">
+            <div class="admin-ops-card">
+                <span class="admin-ops-label">Sách xử lý hôm nay</span>
+                <strong class="admin-ops-value" data-admin-ops-stat="booksProcessedToday">@Model.Operations.BooksProcessedToday.ToString("N0")</strong>
+                <span class="admin-ops-caption">Sách có job hoàn tất trong ngày</span>
+            </div>
+            <div class="admin-ops-card">
+                <span class="admin-ops-label">Job 24 giờ</span>
+                <strong class="admin-ops-value" data-admin-ops-stat="jobs24Hours">@Model.Operations.Jobs24Hours.ToString("N0")</strong>
+                <span class="admin-ops-caption"><span data-admin-ops-stat="jobsSucceeded24Hours">@Model.Operations.JobsSucceeded24Hours.ToString("N0")</span> thành công · <span data-admin-ops-stat="jobsFailed24Hours">@Model.Operations.JobsFailed24Hours.ToString("N0")</span> thất bại</span>
+            </div>
+            <div class="admin-ops-card">
+                <span class="admin-ops-label">Thời gian xử lý TB</span>
+                <strong class="admin-ops-value" data-admin-ops-stat="averageJobDurationSeconds">@(Model.Operations.AverageJobDurationSeconds.HasValue ? $"{Model.Operations.AverageJobDurationSeconds.Value}s" : "-")</strong>
+                <span class="admin-ops-caption"><span data-admin-ops-stat="jobSuccessRatePercent">@Model.Operations.JobSuccessRatePercent.ToString("0.0", CultureInfo.InvariantCulture)%</span> job thành công</span>
+            </div>
+            <div class="admin-ops-card">
+                <span class="admin-ops-label">Quota / rate limit</span>
+                <strong class="admin-ops-value" data-admin-ops-stat="quotaOrRateLimitErrors24Hours">@Model.Operations.QuotaOrRateLimitErrors24Hours.ToString("N0")</strong>
+                <span class="admin-ops-caption"><span data-admin-ops-stat="modelSuccessRate24Hours">@Model.Operations.ModelSuccessRate24Hours.ToString("0.0", CultureInfo.InvariantCulture)%</span> model call thành công</span>
+            </div>
+        </div>
+
+        <div class="admin-ops-content-grid">
+            <div class="admin-chart-card">
+                <div class="admin-chart-header">
+                    <div>
+                        <h3>Job thành công / thất bại</h3>
+                        <p>Theo trạng thái job pipeline gần nhất</p>
+                    </div>
+                    <span class="admin-muted-count"><span data-admin-ops-stat="jobs24Hours">@Model.Operations.Jobs24Hours.ToString("N0")</span> job</span>
+                </div>
+                <div class="admin-chart-list" data-admin-ops-status-list>
+                    @if (Model.Operations.JobStatusMetrics.Count == 0)
+                    {
+                        <div class="admin-empty-row">Chưa có job trong 24 giờ.</div>
+                    }
+                    @foreach (var metric in Model.Operations.JobStatusMetrics)
+                    {
+                        <div class="admin-chart-row">
+                            <div class="admin-chart-meta">
+                                <span>@metric.Label</span>
+                                <strong>@metric.Count.ToString("N0") · @metric.Percent.ToString("0.0", CultureInfo.InvariantCulture)%</strong>
+                            </div>
+                            <div class="admin-chart-track">
+                                <span class="admin-chart-fill @metric.CssClass" style="width: @(metric.Percent.ToString("0.0", CultureInfo.InvariantCulture))%"></span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="admin-chart-card">
+                <div class="admin-chart-header">
+                    <div>
+                        <h3>Model lỗi quota</h3>
+                        <p>Model/task phát sinh quota hoặc rate limit</p>
+                    </div>
+                    <span class="admin-muted-count"><span data-admin-ops-stat="modelCalls24Hours">@Model.Operations.ModelCalls24Hours.ToString("N0")</span> call</span>
+                </div>
+                <div class="admin-chart-list" data-admin-ops-model-list>
+                    @if (Model.Operations.ModelQuotaMetrics.Count == 0)
+                    {
+                        <div class="admin-empty-row">Chưa có lỗi quota hoặc rate limit.</div>
+                    }
+                    @foreach (var metric in Model.Operations.ModelQuotaMetrics)
+                    {
+                        <div class="admin-chart-row">
+                            <div class="admin-chart-meta">
+                                <span>@metric.Task · @metric.Model</span>
+                                <strong>@metric.QuotaOrRateLimitFailureCount.ToString("N0") quota · @metric.SuccessRatePercent.ToString("0.0", CultureInfo.InvariantCulture)% OK</strong>
+                            </div>
+                            <div class="admin-chart-track">
+                                <span class="admin-chart-fill failed" style="width: @(metric.PercentOfMax.ToString("0.0", CultureInfo.InvariantCulture))%"></span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="admin-chart-card wide">
+                <div class="admin-chart-header">
+                    <div>
+                        <h3>Pipeline theo loại job</h3>
+                        <p>Thời gian trung bình, retry và lỗi mới nhất</p>
+                    </div>
+                </div>
+                <div class="admin-pipeline-table-wrap">
+                    <table class="admin-pipeline-table">
+                        <thead>
+                            <tr>
+                                <th>Loại job</th>
+                                <th>Tổng</th>
+                                <th>Thành công</th>
+                                <th>Thất bại</th>
+                                <th>Retry</th>
+                                <th>TB</th>
+                                <th>Lỗi mới nhất</th>
+                            </tr>
+                        </thead>
+                        <tbody data-admin-ops-pipeline-body>
+                            @if (Model.Operations.PipelineMetrics.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="7" class="admin-empty-cell">Chưa có job pipeline trong 24 giờ.</td>
+                                </tr>
+                            }
+                            @foreach (var metric in Model.Operations.PipelineMetrics)
+                            {
+                                <tr>
+                                    <td class="title-cell">@metric.Type</td>
+                                    <td>@metric.TotalCount.ToString("N0")</td>
+                                    <td>@metric.SucceededCount.ToString("N0")</td>
+                                    <td>@metric.FailedCount.ToString("N0")</td>
+                                    <td>@metric.RetryCount.ToString("N0")</td>
+                                    <td>@(metric.AverageDurationSeconds.HasValue ? $"{metric.AverageDurationSeconds.Value}s" : "-")</td>
+                                    <td>@(string.IsNullOrWhiteSpace(metric.LatestFailure) ? "Chưa có" : metric.LatestFailure)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Content Grid: Table + Side Panels -->
+    <div class="admin-content-grid">
+        <!-- Books Table -->
+        <div class="admin-table-card">
+            <div class="admin-table-header">
+                <span class="admin-table-title">Quản lý sách</span>
+                <span class="admin-muted-count" data-admin-books-count>@Model.Books.Count cuốn</span>
+            </div>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Tên sách</th>
+                        <th>Tác giả</th>
+                        <th>Đánh giá</th>
+                        <th>Trạng thái</th>
+                        <th>Tương tác</th>
+                    </tr>
+                </thead>
+                <tbody data-admin-books-body>
+                    @foreach (var book in Model.Books)
+                    {
+                        <tr>
+                            <td class="title-cell">@book.Title</td>
+                            <td>@book.Author</td>
+                            <td class="rating-cell">
+                                @(book.HasRating ? $"{book.Rating:0.00} ({book.ReviewCount})" : "Chưa có")
+                            </td>
+                            <td>
+                                <span class="admin-status-badge @book.Status">@book.Status</span>
+                            </td>
+                            <td>@book.Views.ToString("N0")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Side Panels -->
+        <div class="admin-side-panels">
+            <!-- Notifications -->
+            <div class="admin-panel">
+                <div class="admin-panel-header">
+                    <span class="admin-panel-title">Thông báo</span>
+                    <span class="admin-panel-count" data-admin-notification-count>@Model.Notifications.Count(n => !n.IsRead) mới</span>
+                </div>
+                <div class="admin-notification-list" data-admin-notification-list>
+                    @foreach (var notif in Model.Notifications)
+                    {
+                        <div class="admin-notification-item @(notif.IsRead ? "" : "unread")">
+                            <div class="admin-notification-dot @notif.Type"></div>
+                            <div>
+                                <div class="admin-notification-text">@notif.Message</div>
+                                <div class="admin-notification-time" data-timestamp="@notif.Timestamp.ToString("o")">@notif.Timestamp.ToString("HH:mm")</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="admin-panel">
+                <div class="admin-panel-header">
+                    <span class="admin-panel-title">Hoạt động gần đây</span>
+                </div>
+                <div class="admin-activity-list" data-admin-activity-list>
+                    @foreach (var activity in Model.RecentActivities)
+                    {
+                        <div class="admin-activity-item">
+                            <div class="admin-activity-dot"></div>
+                            <div>
+                                <div class="admin-activity-text">
+                                    <span class="admin-activity-action">@activity.Action:</span>
+                                    @activity.Detail
+                                </div>
+                                <div class="admin-activity-time" data-timestamp="@activity.Timestamp.ToString("o")">@activity.Timestamp.ToString("HH:mm")</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

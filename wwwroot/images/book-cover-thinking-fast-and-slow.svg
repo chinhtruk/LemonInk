@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1800" role="img" aria-label="Bìa sách Tư Duy Nhanh và Chậm">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1c2039"/>
+      <stop offset="55%" stop-color="#2f355c"/>
+      <stop offset="100%" stop-color="#f8bb16"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff8db"/>
+      <stop offset="100%" stop-color="#ffe08a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="1800" fill="url(#bg)"/>
+  <circle cx="980" cy="240" r="210" fill="#f8bb16" opacity="0.24"/>
+  <circle cx="180" cy="1480" r="260" fill="#ffffff" opacity="0.08"/>
+  <rect x="120" y="150" width="960" height="1500" rx="52" fill="url(#panel)" opacity="0.96"/>
+  <path d="M180 370c150 85 315 126 480 126s330-41 420-94" fill="none" stroke="#1c2039" stroke-opacity="0.14" stroke-width="6"/>
+  <path d="M180 410c150 85 315 126 480 126s330-41 420-94" fill="none" stroke="#1c2039" stroke-opacity="0.09" stroke-width="6"/>
+  <rect x="180" y="600" width="840" height="420" rx="28" fill="#1c2039" opacity="0.07"/>
+  <text x="180" y="300" fill="#1c2039" font-family="Inter, Arial, sans-serif" font-size="36" font-weight="700" letter-spacing="6">TÂM LÝ HỌC</text>
+  <text x="180" y="720" fill="#1c2039" font-family="Source Serif 4, Georgia, serif" font-size="92" font-weight="700">
+    <tspan x="180" dy="0">Tư Duy Nhanh</tspan>
+    <tspan x="180" dy="112">và Chậm</tspan>
+  </text>
+  <text x="180" y="980" fill="#1c2039" font-family="Inter, Arial, sans-serif" font-size="36" opacity="0.82">Daniel Kahneman</text>
+  <rect x="180" y="1110" width="840" height="3" fill="#1c2039" opacity="0.18"/>
+  <text x="180" y="1210" fill="#1c2039" font-family="Inter, Arial, sans-serif" font-size="30" opacity="0.8">Sách tóm tắt cho tư duy sâu và quyết định sáng suốt</text>
+  <circle cx="920" cy="1230" r="110" fill="#f8bb16" opacity="0.32"/>
+  <circle cx="920" cy="1230" r="70" fill="#1c2039" opacity="0.08"/>
+</svg>

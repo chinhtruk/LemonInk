@@ -1,0 +1,584 @@
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Đăng nhập hoặc đăng ký";
+    var returnUrl = ViewData["ReturnUrl"]?.ToString() ?? string.Empty;
+    var returnUrlQuery = string.IsNullOrWhiteSpace(returnUrl) ? string.Empty : $"&returnUrl={Uri.EscapeDataString(returnUrl)}";
+}
+
+<div class="auth-container">
+    <section class="auth-card">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <a href="/"><img src="/images/LemonInk.png?v=4" alt="LemonInk" style="height: 64px; width: auto;" /></a>
+        </div>
+        
+        <div id="step1" class="auth-step active">
+            <div class="auth-heading">
+                <h1 class="auth-title">Chào mừng đến với LemonInk</h1>
+            </div>
+
+            <div class="auth-social">
+                <a href="/Account/ExternalLogin?provider=google@(returnUrlQuery)" class="auth-social-btn auth-social-google">
+                    <svg viewBox="0 0 48 48" aria-hidden="true">
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.7 17.74 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                        <path fill="none" d="M0 0h48v48H0z"/>
+                    </svg>
+                    <span>Tiếp tục với Google</span>
+                </a>
+                <button type="button" class="auth-social-btn auth-social-phone" data-phone-login-placeholder>
+                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.82 19.82 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.82 19.82 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.32 1.77.59 2.6a2 2 0 0 1-.45 2.11L8 9.68a16 16 0 0 0 6.32 6.32l1.25-1.25a2 2 0 0 1 2.11-.45c.83.27 1.7.47 2.6.59A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    <span>Tiếp tục với số điện thoại</span>
+                </button>
+            </div>
+
+            <div class="auth-divider">
+                <span>HOẶC</span>
+            </div>
+
+            <form onsubmit="return handleEmailCheck(event)">
+                <div class="auth-form-group">
+                    <input type="email" id="initialEmail" class="auth-input" required placeholder="Địa chỉ Email" />
+                </div>
+                <button type="submit" class="auth-btn" id="btnContinue" style="margin-top: 12px;">Tiếp tục</button>
+            </form>
+        </div>
+
+        <div id="step2" class="auth-step">
+            <div class="auth-heading">
+                <h1 class="auth-title" id="step2Title">Nhập mật khẩu</h1>
+                <p class="auth-step-subtitle" id="step2Subtitle" hidden></p>
+            </div>
+
+            <div class="auth-email-display" id="authEmailDisplay">
+                <span class="auth-field-label">Email</span>
+                <span class="email-text" id="displayEmail"></span>
+                <button type="button" onclick="goBackToStep1()" aria-label="Chỉnh sửa email" title="Chỉnh sửa email">
+                    Sửa
+                </button>
+            </div>
+
+            <form method="post" id="authForm" action="/Account/Login" class="auth-form">
+                @Html.AntiForgeryToken()
+                @if (!string.IsNullOrWhiteSpace(returnUrl))
+                {
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                }
+                <input type="hidden" name="email" id="finalEmail" value="" />
+                
+                <!-- Fake inputs to absorb aggressive browser autofill -->
+                <input type="text" name="fakeUsername" style="position: absolute; opacity: 0; top: -1000px; height: 0; width: 0;" tabindex="-1" autocomplete="username" aria-hidden="true" />
+                <input type="password" name="fakePassword" style="position: absolute; opacity: 0; top: -1000px; height: 0; width: 0;" tabindex="-1" autocomplete="current-password" aria-hidden="true" />
+
+                <div class="auth-form-group" id="passwordLoginFields">
+                    <div class="auth-label-row" id="forgotPasswordRow">
+                        <label class="auth-label" style="opacity: 0;">.</label>
+                        <button type="button" class="auth-inline-action" id="btnForgotPassword">Quên mật khẩu?</button>
+                    </div>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" class="auth-input" required placeholder="Nhập mật khẩu" />
+                        <button type="button" class="password-toggle" onclick="togglePassword(this, 'password')" aria-label="Hiện mật khẩu">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="auth-btn auth-btn-spaced" id="btnFinalSubmit">Tiếp tục</button>
+            </form>
+
+            <div class="auth-mode-switch" id="passwordOtpChoice" hidden>
+                <div class="auth-divider">
+                    <span>HOẶC</span>
+                </div>
+                <button type="button" class="auth-outline-action" id="btnSendEmailOtp">
+                    Đăng nhập bằng mã một lần
+                </button>
+            </div>
+
+            <div class="auth-otp-mode" id="emailOtpMode" hidden>
+                <div class="auth-form-group">
+                    <div class="auth-floating-input">
+                        <label for="emailOtpCode">Mã xác minh</label>
+                        <input type="text" id="emailOtpCode" inputmode="numeric" maxlength="8" autocomplete="one-time-code" />
+                    </div>
+                </div>
+                <button type="button" class="auth-btn auth-btn-spaced" id="btnVerifyEmailOtp">Tiếp tục</button>
+                <button type="button" class="auth-otp-resend" id="btnResendEmailOtp">Gửi lại email</button>
+                <p class="auth-otp-note" id="emailOtpNote"></p>
+                <div class="auth-divider">
+                    <span>HOẶC</span>
+                </div>
+                <button type="button" class="auth-outline-action" id="btnUsePassword">
+                    Đăng nhập bằng mật khẩu
+                </button>
+            </div>
+
+            <div class="auth-registration-mode" id="otpRegistrationMode" hidden>
+                <div class="auth-form-group">
+                    <input type="text" id="otpRegistrationName" class="auth-input" placeholder="Họ và tên của bạn" autocomplete="name" maxlength="120" />
+                </div>
+                <input type="hidden" id="otpRegistrationToken" value="" />
+                <button type="button" class="auth-btn auth-btn-spaced" id="btnCompleteOtpRegistration">
+                    Bắt đầu đọc
+                </button>
+                <p class="auth-otp-note">Bạn có thể tiếp tục đăng nhập bằng mã một lần vào lần sau.</p>
+            </div>
+
+            <div class="auth-reset-mode" id="passwordResetMode" hidden>
+                <div class="auth-form-group">
+                    <div class="auth-floating-input">
+                        <label for="passwordResetCode">Mã xác minh</label>
+                        <input type="text" id="passwordResetCode" inputmode="numeric" maxlength="8" autocomplete="one-time-code" />
+                    </div>
+                </div>
+                <div class="password-wrapper">
+                    <input type="password" id="newPassword" class="auth-input" placeholder="Mật khẩu mới" autocomplete="new-password" minlength="12" />
+                    <button type="button" class="password-toggle" onclick="togglePassword(this, 'newPassword')" aria-label="Hiện mật khẩu">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                </div>
+                <div class="zen-password-strength" data-password-strength-for="newPassword" aria-live="polite">
+                    <div class="zen-password-strength-track"><span data-password-strength-fill></span></div>
+                    <p data-password-strength-text>Dùng ít nhất 12 ký tự.</p>
+                </div>
+                <div class="password-wrapper">
+                    <input type="password" id="confirmNewPassword" class="auth-input" placeholder="Xác nhận mật khẩu mới" autocomplete="new-password" minlength="12" />
+                    <button type="button" class="password-toggle" onclick="togglePassword(this, 'confirmNewPassword')" aria-label="Hiện mật khẩu">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                </div>
+                <button type="button" class="auth-btn auth-btn-spaced" id="btnResetPassword">Đặt lại mật khẩu</button>
+                <button type="button" class="auth-otp-resend" id="btnResendPasswordResetOtp">Gửi lại mã</button>
+                <p class="auth-otp-note" id="passwordResetNote"></p>
+                <div class="auth-divider">
+                    <span>HOẶC</span>
+                </div>
+                <button type="button" class="auth-outline-action" id="btnCancelPasswordReset">
+                    Quay lại đăng nhập
+                </button>
+            </div>
+        </div>
+
+    </section>
+</div>
+
+<script>
+    let otpCooldownTimer = null;
+    let emailOtpRequestController = null;
+    let emailOtpRequestVersion = 0;
+    let resetOtpCooldownTimer = null;
+
+    function showAuthToast(message, tone = 'info') {
+        if (window.LemonInkToast?.show) {
+            window.LemonInkToast.show(message, tone);
+        } else {
+            alert(message);
+        }
+    }
+
+    function getCsrfToken() {
+        return document.querySelector('#authForm input[name="__RequestVerificationToken"]')?.value ?? '';
+    }
+
+    async function postAuthForm(url, payload, signal = undefined) {
+        const body = new URLSearchParams(payload);
+        body.set('__RequestVerificationToken', getCsrfToken());
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'Accept': 'application/json'
+            },
+            body,
+            signal
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok === false) {
+            throw new Error(data.message || 'Không xử lý được yêu cầu.');
+        }
+
+        return data;
+    }
+
+    function cancelPendingEmailOtpRequest() {
+        emailOtpRequestVersion += 1;
+        if (emailOtpRequestController) {
+            emailOtpRequestController.abort();
+            emailOtpRequestController = null;
+        }
+    }
+
+    function resetEmailOtp() {
+        cancelPendingEmailOtpRequest();
+        window.clearInterval(otpCooldownTimer);
+        otpCooldownTimer = null;
+        document.getElementById('emailOtpMode').hidden = true;
+        document.getElementById('passwordOtpChoice').hidden = true;
+        document.getElementById('otpRegistrationMode').hidden = true;
+        document.getElementById('step2Subtitle').hidden = true;
+        document.getElementById('step2Subtitle').innerText = '';
+        document.getElementById('emailOtpCode').value = '';
+        document.getElementById('emailOtpNote').innerText = '';
+        document.getElementById('otpRegistrationName').value = '';
+        document.getElementById('otpRegistrationToken').value = '';
+        document.getElementById('btnSendEmailOtp').disabled = false;
+        document.getElementById('btnResendEmailOtp').disabled = false;
+        document.getElementById('btnSendEmailOtp').innerText = 'Đăng nhập bằng mã một lần';
+        document.getElementById('btnResendEmailOtp').innerText = 'Gửi lại email';
+    }
+
+    function resetPasswordResetMode() {
+        window.clearInterval(resetOtpCooldownTimer);
+        resetOtpCooldownTimer = null;
+        document.getElementById('passwordResetMode').hidden = true;
+        document.getElementById('passwordResetCode').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmNewPassword').value = '';
+        document.getElementById('passwordResetNote').innerText = '';
+        document.getElementById('btnForgotPassword').disabled = false;
+        document.getElementById('btnResendPasswordResetOtp').disabled = false;
+        document.getElementById('btnForgotPassword').innerText = 'Quên mật khẩu?';
+        document.getElementById('btnResendPasswordResetOtp').innerText = 'Gửi lại mã';
+    }
+
+    function showPasswordMode() {
+        cancelPendingEmailOtpRequest();
+        const authForm = document.getElementById('authForm');
+        const password = document.getElementById('password');
+        authForm.action = '/Account/Login';
+        document.getElementById('step2Title').innerText = 'Nhập mật khẩu';
+        document.getElementById('step2Subtitle').hidden = true;
+        document.getElementById('authEmailDisplay').hidden = false;
+        document.getElementById('authForm').hidden = false;
+        document.getElementById('passwordOtpChoice').hidden = false;
+        document.getElementById('otpRegistrationMode').hidden = true;
+        document.getElementById('emailOtpMode').hidden = true;
+        document.getElementById('passwordResetMode').hidden = true;
+        document.getElementById('passwordLoginFields').style.display = 'block';
+        document.getElementById('forgotPasswordRow').style.display = 'flex';
+        password.setAttribute('autocomplete', 'current-password');
+        password.removeAttribute('minlength');
+        document.getElementById('btnFinalSubmit').innerText = 'Tiếp tục';
+    }
+
+    function showOtpMode(data) {
+        const email = document.getElementById('finalEmail').value.trim();
+        const subtitle = document.getElementById('step2Subtitle');
+        document.getElementById('step2Title').innerText = 'Kiểm tra hộp thư';
+        subtitle.innerText = `Nhập mã xác minh LemonInk vừa gửi đến ${email}.`;
+        subtitle.hidden = false;
+        document.getElementById('authEmailDisplay').hidden = true;
+        document.getElementById('authForm').hidden = true;
+        document.getElementById('passwordOtpChoice').hidden = true;
+        document.getElementById('otpRegistrationMode').hidden = true;
+        document.getElementById('emailOtpMode').hidden = false;
+        document.getElementById('passwordResetMode').hidden = true;
+        document.getElementById('emailOtpNote').innerText = data?.message || '';
+        document.getElementById('emailOtpCode').focus();
+    }
+
+    function showPasswordResetMode(data) {
+        const email = document.getElementById('finalEmail').value.trim();
+        const subtitle = document.getElementById('step2Subtitle');
+        document.getElementById('step2Title').innerText = 'Đặt lại mật khẩu';
+        subtitle.innerText = `Nhập mã xác minh LemonInk vừa gửi đến ${email}, rồi tạo mật khẩu mới.`;
+        subtitle.hidden = false;
+        document.getElementById('authEmailDisplay').hidden = true;
+        document.getElementById('authForm').hidden = true;
+        document.getElementById('passwordOtpChoice').hidden = true;
+        document.getElementById('otpRegistrationMode').hidden = true;
+        document.getElementById('emailOtpMode').hidden = true;
+        document.getElementById('passwordResetMode').hidden = false;
+        document.getElementById('passwordResetNote').innerText = data?.message || '';
+        document.getElementById('passwordResetCode').focus();
+    }
+
+    function showOtpRegistrationMode(data) {
+        const subtitle = document.getElementById('step2Subtitle');
+        document.getElementById('step2Title').innerText = 'Hoàn tất hồ sơ';
+        subtitle.innerText = 'Email đã được xác minh. Bạn nhập tên hiển thị để bắt đầu.';
+        subtitle.hidden = false;
+        document.getElementById('authEmailDisplay').hidden = true;
+        document.getElementById('authForm').hidden = true;
+        document.getElementById('passwordOtpChoice').hidden = true;
+        document.getElementById('emailOtpMode').hidden = true;
+        document.getElementById('passwordResetMode').hidden = true;
+        document.getElementById('otpRegistrationMode').hidden = false;
+        document.getElementById('otpRegistrationToken').value = data.registrationToken || '';
+        document.getElementById('otpRegistrationName').focus();
+    }
+
+    function startOtpCooldown(seconds) {
+        const sendButton = document.getElementById('btnSendEmailOtp');
+        const resendButton = document.getElementById('btnResendEmailOtp');
+        let remaining = Number(seconds || 0);
+        window.clearInterval(otpCooldownTimer);
+
+        const tick = () => {
+            const disabled = remaining > 0;
+            sendButton.disabled = disabled;
+            resendButton.disabled = disabled;
+            sendButton.innerText = disabled ? `Gửi lại sau ${remaining}s` : 'Đăng nhập bằng mã một lần';
+            resendButton.innerText = disabled ? `Gửi lại sau ${remaining}s` : 'Gửi lại email';
+            remaining -= 1;
+            if (remaining < 0) {
+                window.clearInterval(otpCooldownTimer);
+                otpCooldownTimer = null;
+            }
+        };
+
+        tick();
+        otpCooldownTimer = window.setInterval(tick, 1000);
+    }
+
+    function startPasswordResetCooldown(seconds) {
+        const forgotButton = document.getElementById('btnForgotPassword');
+        const resendButton = document.getElementById('btnResendPasswordResetOtp');
+        let remaining = Number(seconds || 0);
+        window.clearInterval(resetOtpCooldownTimer);
+
+        const tick = () => {
+            const disabled = remaining > 0;
+            forgotButton.disabled = disabled;
+            resendButton.disabled = disabled;
+            resendButton.innerText = disabled ? `Gửi lại sau ${remaining}s` : 'Gửi lại mã';
+            remaining -= 1;
+            if (remaining < 0) {
+                window.clearInterval(resetOtpCooldownTimer);
+                resetOtpCooldownTimer = null;
+            }
+        };
+
+        tick();
+        resetOtpCooldownTimer = window.setInterval(tick, 1000);
+    }
+
+    async function sendEmailOtp() {
+        const email = document.getElementById('finalEmail').value.trim();
+        const note = document.getElementById('emailOtpNote');
+        const button = document.getElementById('btnSendEmailOtp');
+        const originalText = button.innerText;
+        cancelPendingEmailOtpRequest();
+        const requestVersion = emailOtpRequestVersion;
+        const controller = new AbortController();
+        emailOtpRequestController = controller;
+
+        button.disabled = true;
+        button.innerText = 'Đang gửi mã...';
+
+        try {
+            const data = await postAuthForm('/Account/SendEmailOtp', { email }, controller.signal);
+            if (requestVersion !== emailOtpRequestVersion) {
+                return;
+            }
+
+            showOtpMode(data);
+            note.innerText = data.message || 'Đã gửi mã OTP đến email của bạn.';
+            showAuthToast(note.innerText, 'success');
+            startOtpCooldown(data.resendAfterSeconds || 45);
+        } catch (error) {
+            if (error.name === 'AbortError' || requestVersion !== emailOtpRequestVersion) {
+                return;
+            }
+
+            note.innerText = error.message;
+            showAuthToast(error.message, 'error');
+            button.disabled = false;
+            button.innerText = originalText;
+        } finally {
+            if (requestVersion === emailOtpRequestVersion) {
+                emailOtpRequestController = null;
+            }
+        }
+    }
+
+    async function verifyEmailOtp() {
+        const email = document.getElementById('finalEmail').value.trim();
+        const code = document.getElementById('emailOtpCode').value.trim();
+        const returnUrl = document.querySelector('#authForm input[name="returnUrl"]')?.value ?? '';
+        const button = document.getElementById('btnVerifyEmailOtp');
+        const originalText = button.innerText;
+
+        if (!code) {
+            showAuthToast('Bạn nhập mã OTP nhé.', 'warning');
+            return;
+        }
+
+        button.disabled = true;
+        button.innerText = 'Đang xác thực...';
+
+        try {
+            const data = await postAuthForm('/Account/LoginWithEmailOtp', { email, code, returnUrl });
+            if (data.requiresRegistration) {
+                button.disabled = false;
+                button.innerText = originalText;
+                showOtpRegistrationMode(data);
+                return;
+            }
+
+            window.location.href = data.redirectUrl || '/';
+        } catch (error) {
+            showAuthToast(error.message, 'error');
+            button.disabled = false;
+            button.innerText = originalText;
+        }
+    }
+
+    async function completeOtpRegistration() {
+        const fullName = document.getElementById('otpRegistrationName').value.trim();
+        const registrationToken = document.getElementById('otpRegistrationToken').value;
+        const returnUrl = document.querySelector('#authForm input[name="returnUrl"]')?.value ?? '';
+        const button = document.getElementById('btnCompleteOtpRegistration');
+        const originalText = button.innerText;
+
+        if (!fullName) {
+            showAuthToast('Bạn nhập họ và tên nhé.', 'warning');
+            return;
+        }
+
+        button.disabled = true;
+        button.innerText = 'Đang tạo tài khoản...';
+        try {
+            const data = await postAuthForm('/Account/CompleteEmailOtpRegistration', { fullName, registrationToken, returnUrl });
+            window.location.href = data.redirectUrl || '/';
+        } catch (error) {
+            showAuthToast(error.message, 'error');
+            button.disabled = false;
+            button.innerText = originalText;
+        }
+    }
+
+    async function sendPasswordResetOtp() {
+        const email = document.getElementById('finalEmail').value.trim();
+        const button = document.getElementById('btnForgotPassword');
+        const resendButton = document.getElementById('btnResendPasswordResetOtp');
+        const activeButton = document.getElementById('passwordResetMode').hidden ? button : resendButton;
+        const originalText = activeButton.innerText;
+
+        activeButton.disabled = true;
+        activeButton.innerText = 'Đang gửi mã...';
+
+        try {
+            const data = await postAuthForm('/Account/SendPasswordResetOtp', { email });
+            showPasswordResetMode(data);
+            showAuthToast(data.message || 'Đã gửi mã đặt lại mật khẩu.', 'success');
+            startPasswordResetCooldown(data.resendAfterSeconds || 45);
+        } catch (error) {
+            showAuthToast(error.message, 'error');
+            activeButton.disabled = false;
+            activeButton.innerText = originalText;
+        }
+    }
+
+    async function resetPasswordWithOtp() {
+        const email = document.getElementById('finalEmail').value.trim();
+        const code = document.getElementById('passwordResetCode').value.trim();
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmNewPassword').value;
+        const button = document.getElementById('btnResetPassword');
+        const originalText = button.innerText;
+
+        if (!code) {
+            showAuthToast('Bạn nhập mã xác minh nhé.', 'warning');
+            return;
+        }
+
+        if (newPassword.length < 12) {
+            showAuthToast('Mật khẩu mới phải có ít nhất 12 ký tự.', 'warning');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            showAuthToast('Mật khẩu mới và xác nhận mật khẩu chưa khớp.', 'warning');
+            return;
+        }
+
+        button.disabled = true;
+        button.innerText = 'Đang đặt lại...';
+
+        try {
+            const data = await postAuthForm('/Account/ResetPasswordWithOtp', { email, code, newPassword, confirmPassword });
+            resetPasswordResetMode();
+            showPasswordMode();
+            document.getElementById('password').value = '';
+            document.getElementById('password').focus();
+            showAuthToast(data.message || 'Đã đổi mật khẩu. Bạn đăng nhập lại nhé.', 'success');
+        } catch (error) {
+            showAuthToast(error.message, 'error');
+        } finally {
+            button.disabled = false;
+            button.innerText = originalText;
+        }
+    }
+
+    document.querySelector('[data-phone-login-placeholder]')?.addEventListener('click', function () {
+        if (window.LemonInkToast?.show) {
+            window.LemonInkToast.show('Đăng nhập bằng số điện thoại chưa hoàn thiện. Bạn dùng Google hoặc email trước nhé.', 'info');
+        }
+    });
+
+    document.getElementById('btnSendEmailOtp')?.addEventListener('click', sendEmailOtp);
+    document.getElementById('btnResendEmailOtp')?.addEventListener('click', sendEmailOtp);
+    document.getElementById('btnVerifyEmailOtp')?.addEventListener('click', verifyEmailOtp);
+    document.getElementById('btnCompleteOtpRegistration')?.addEventListener('click', completeOtpRegistration);
+    document.getElementById('otpRegistrationName')?.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            completeOtpRegistration();
+        }
+    });
+    document.getElementById('btnForgotPassword')?.addEventListener('click', sendPasswordResetOtp);
+    document.getElementById('btnResendPasswordResetOtp')?.addEventListener('click', sendPasswordResetOtp);
+    document.getElementById('btnResetPassword')?.addEventListener('click', resetPasswordWithOtp);
+    ['passwordResetCode', 'newPassword', 'confirmNewPassword'].forEach(function (fieldId) {
+        document.getElementById(fieldId)?.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                resetPasswordWithOtp();
+            }
+        });
+    });
+    document.getElementById('btnCancelPasswordReset')?.addEventListener('click', function () {
+        resetPasswordResetMode();
+        showPasswordMode();
+        document.getElementById('password').focus();
+    });
+    document.getElementById('btnUsePassword')?.addEventListener('click', function () {
+        showPasswordMode();
+        document.getElementById('password').focus();
+    });
+
+    function handleEmailCheck(event) {
+        event.preventDefault();
+
+        const email = document.getElementById('initialEmail').value.trim();
+        if (!email) return false;
+
+        document.getElementById('displayEmail').innerText = email;
+        document.getElementById('finalEmail').value = email;
+        resetEmailOtp();
+        resetPasswordResetMode();
+        document.getElementById('step1').classList.remove('active');
+        document.getElementById('step2').classList.add('active');
+        document.getElementById('password').value = '';
+        showPasswordMode();
+        document.getElementById('password').focus();
+
+        return false;
+    }
+
+    function goBackToStep1() {
+        document.getElementById('step2').classList.remove('active');
+        document.getElementById('step1').classList.add('active');
+        
+        // Reset password
+        document.getElementById('password').value = "";
+        resetEmailOtp();
+        resetPasswordResetMode();
+    }
+</script>

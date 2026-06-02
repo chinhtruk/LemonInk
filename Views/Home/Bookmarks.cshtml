@@ -1,0 +1,255 @@
+@model BookmarkPageViewModel
+@{
+    ViewData["Title"] = "Đánh dấu";
+    var demoState = (Context.Request.Query["state"].ToString() ?? string.Empty).Trim().ToLowerInvariant();
+    var showLoading = demoState == "loading";
+    var showError = demoState == "error";
+    var showEmpty = demoState == "empty" || (!showLoading && !showError && Model.TotalSavedBooks == 0);
+}
+
+<div class="zen-container zen-bookmark-page">
+
+    @if (showLoading)
+    {
+        @await Html.PartialAsync("_LoadingState", new UiStateViewModel
+        {
+            Kind = UiStateKind.Loading,
+            Kicker = "Kệ sách cá nhân",
+            Title = "Đang nạp dấu trang",
+            Description = "LemonInk đang đồng bộ các mục đã lưu, tiến độ đọc và những cuốn bạn muốn quay lại sau.",
+            SkeletonCards = 2
+        })
+    }
+    else if (showError)
+    {
+        @await Html.PartialAsync("_ErrorState", new UiStateViewModel
+        {
+            Kind = UiStateKind.Error,
+            Kicker = "Đánh dấu",
+            Title = "Không tải được dữ liệu đã lưu",
+            Description = "Phần dấu trang đang gặp vấn đề tạm thời. Hãy thử tải lại trang sau hoặc quay lại thư viện.",
+            Hint = "Khi backend hoàn thiện, state này sẽ dùng cho lỗi đồng bộ bookmark.",
+            IconSvg = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z\"/><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"/></svg>",
+            PrimaryActionText = "Tải lại trang",
+            PrimaryActionUrl = "/Home/Bookmarks",
+            SecondaryActionText = "Khám phá thư viện",
+            SecondaryActionUrl = "/Home/Library"
+        })
+    }
+    else if (showEmpty)
+    {
+        <div class="zen-bookmark-empty-state">
+            <div class="zen-bookmark-empty-glow"></div>
+            <div class="zen-bookmark-empty-visual-container">
+                <div class="zen-bookmark-empty-illustration">
+                    <div class="zen-illustration-book">
+                        <div class="zen-illustration-book-spine"></div>
+                        <div class="zen-illustration-book-cover">
+                            <div class="zen-illustration-bookmark-ribbon"></div>
+                            <div class="zen-illustration-book-logo">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="zen-illustration-pages"></div>
+                    </div>
+                    
+                    <div class="zen-illustration-mini-card zen-mini-card-audio" data-tooltip="Audio tóm tắt">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                        </svg>
+                    </div>
+                    <div class="zen-illustration-mini-card zen-mini-card-note" data-tooltip="Ghi chú cá nhân">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="zen-bookmark-empty-content">
+                <div class="zen-bookmark-empty-kicker">Kệ sách cá nhân</div>
+                <h2 class="zen-bookmark-empty-title">Kệ sách của bạn đang trống</h2>
+                <p class="zen-bookmark-empty-desc">
+                    Lưu trữ những bản tóm tắt bạn đang đọc dở, các phần audio tóm tắt yêu thích hoặc các ghi chú muốn xem lại sau để LemonInk giúp bạn học tập khoa học hơn.
+                </p>
+
+                <div class="zen-bookmark-steps-grid">
+                    <div class="zen-bookmark-step-card">
+                        <div class="zen-step-num">01</div>
+                        <h3>Khám phá</h3>
+                        <p>Tìm kiếm sách và tài liệu hữu ích tại Thư viện.</p>
+                    </div>
+                    <div class="zen-bookmark-step-card">
+                        <div class="zen-step-num">02</div>
+                        <h3>Đánh dấu</h3>
+                        <p>Nhấn biểu tượng Lưu để đưa vào kệ cá nhân.</p>
+                    </div>
+                    <div class="zen-bookmark-step-card">
+                        <div class="zen-step-num">03</div>
+                        <h3>Thưởng thức</h3>
+                        <p>Đọc & nghe audio tóm tắt mọi lúc mọi nơi.</p>
+                    </div>
+                </div>
+
+                <div class="zen-bookmark-empty-actions">
+                    <a href="/Home/Library" class="zen-btn zen-btn-primary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        Khám phá thư viện ngay
+                    </a>
+                    <a href="/" class="zen-btn zen-btn-ghost">Quay về trang chủ</a>
+                </div>
+                
+                <div class="zen-bookmark-empty-hint">
+                    Mẹo: Bạn có thể xem trước trạng thái này bất cứ lúc nào bằng cách thêm <code>?state=empty</code> vào URL.
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!showLoading && !showError && !showEmpty)
+    {
+        <div class="zen-my-library-filter zen-library-toolbar">
+            <div class="zen-library-search">
+                <svg class="zen-library-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="search" class="zen-library-search-input" data-bookmark-search placeholder="Tìm trong danh sách đã lưu..." />
+            </div>
+
+            <div class="zen-filter-selects-group">
+                <div class="zen-filter-select-wrapper">
+                    <span class="zen-filter-label">Sắp xếp:</span>
+                    <select class="zen-filter-select" data-bookmark-sort>
+                        <option value="default">Mới lưu</option>
+                        <option value="progress-desc">Tiến độ cao</option>
+                        <option value="title-asc">Tên A-Z</option>
+                    </select>
+                </div>
+                <div class="zen-filter-select-wrapper">
+                    <span class="zen-filter-label">Trạng thái:</span>
+                    <select class="zen-filter-select" data-bookmark-filter-select>
+                        <option value="Tất cả">Tất cả</option>
+                        <option value="Đang đọc">Đang đọc</option>
+                        <option value="Có audio">Có audio</option>
+                        <option value="Có ghi chú">Có ghi chú</option>
+                        <option value="Đã đọc xong">Đã đọc xong</option>
+                    </select>
+                </div>
+                
+                <button type="button" class="zen-filter-reset-btn" data-bookmark-reset data-tooltip="Đặt lại bộ lọc" aria-label="Đặt lại bộ lọc">
+                    <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v6h6"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <section class="zen-bookmark-section" data-bookmark-section="continue">
+            <div class="zen-section-header">
+                <h2 class="zen-section-title">Tiếp tục đọc</h2>
+            </div>
+
+            <div class="zen-bookmark-continue-grid">
+                @foreach (var book in Model.ContinueReading)
+                {
+                    <a href="/Home/Read/@book.Id"
+                       class="zen-bookmark-feature-card"
+                       data-bookmark-card
+                       data-bookmark-title="@book.Title"
+                       data-bookmark-author="@book.Author"
+                       data-bookmark-category="@book.Category"
+                       data-bookmark-status="@book.StatusLabel"
+                       data-bookmark-audio="@(book.HasAudio.ToString().ToLowerInvariant())"
+                       data-bookmark-notes="@(book.HasNotes.ToString().ToLowerInvariant())"
+                       data-bookmark-progress="@book.ProgressPercent"
+                       data-bookmark-order="@book.OrderIndex">
+                        <div class="zen-bookmark-feature-cover" style="background: @book.CoverGradient;">
+                            @if (!string.IsNullOrEmpty(book.CoverUrl))
+                            {
+                                <img src="@book.CoverUrl" alt="Bìa sách @book.Title" class="zen-bookmark-feature-image" loading="lazy" />
+                            }
+                            else
+                            {
+                                <span class="zen-bookmark-feature-icon">@Html.Raw(book.CoverSvg)</span>
+                            }
+                            <span class="zen-bookmark-feature-badge">@book.ProgressPercent%</span>
+                        </div>
+
+                        <div class="zen-bookmark-feature-body">
+                            <div class="zen-bookmark-feature-topline">
+                                <span class="zen-bookmark-status">@book.StatusLabel</span>
+                                <span class="zen-bookmark-mini">@book.Category</span>
+                            </div>
+
+                            <h3>@book.Title</h3>
+                            <p>@book.Author</p>
+                            <div class="zen-bookmark-note">@book.NoteSnippet</div>
+
+                            <div class="zen-bookmark-progress">
+                                <div class="zen-bookmark-progress-track">
+                                    <span style="width: @book.ProgressPercent%;"></span>
+                                </div>
+                                <strong>@book.ProgressLabel</strong>
+                            </div>
+
+                            <div class="zen-bookmark-feature-meta">
+                                <span>@book.LastOpenedLabel</span>
+                                <span>@(book.HasAudio ? "Audio sẵn sàng" : "Chưa có audio")</span>
+                            </div>
+                        </div>
+                    </a>
+                }
+            </div>
+        </section>
+
+        <section class="zen-bookmark-section" data-bookmark-section="saved">
+            <div class="zen-section-header">
+                <h2 class="zen-section-title">Đã lưu gần đây</h2>
+            </div>
+
+            <div class="zen-book-grid zen-bookmark-grid">
+                @foreach (var book in Model.SavedBooks)
+                {
+                    <a href="/Books/Detail/@book.Id"
+                       class="zen-book-card zen-bookmark-card"
+                       data-bookmark-card
+                       data-bookmark-title="@book.Title"
+                       data-bookmark-author="@book.Author"
+                       data-bookmark-category="@book.Category"
+                       data-bookmark-status="@book.StatusLabel"
+                       data-bookmark-audio="@(book.HasAudio.ToString().ToLowerInvariant())"
+                       data-bookmark-notes="@(book.HasNotes.ToString().ToLowerInvariant())"
+                       data-bookmark-progress="@book.ProgressPercent"
+                       data-bookmark-order="@book.OrderIndex">
+                        <div class="zen-book-card-cover" style="background: @book.CoverGradient;">
+                            <img src="@book.CoverUrl" alt="Bìa sách @book.Title" class="zen-book-card-cover-image" loading="lazy" />
+                        </div>
+                        <span class="zen-book-card-category">@book.Category</span>
+                        <h3 class="zen-book-card-title">@book.Title</h3>
+                        <p class="zen-book-card-author">@book.Author</p>
+                        <div class="zen-book-card-meta">
+                            <span>@book.ReadingTimeMinutes phút đọc</span>
+                            <span>@book.StatusLabel</span>
+                        </div>
+                    </a>
+                }
+            </div>
+        </section>
+
+        <div class="zen-empty-state" data-bookmark-empty hidden>
+            <div class="zen-empty-state-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+            </div>
+            <h2>Không có mục phù hợp</h2>
+            <p>Thử đổi từ khóa, bộ lọc hoặc sắp xếp để xem các mục đã lưu khác.</p>
+            <a href="/Home/Library" class="zen-btn zen-btn-primary">Khám phá thư viện</a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/bookmarks.js"></script>
+}

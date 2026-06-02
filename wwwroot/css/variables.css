@@ -1,0 +1,99 @@
+/* ============================================
+   LemonInk — Minimalist Design Tokens
+   Clean, typography-focused, elegant
+   ============================================ */
+:root {
+    /* ── Core Colors ── */
+    --zen-bg: #FCFCFD;
+    --zen-surface: #FFFFFF;
+    --zen-surface-hover: #F7F7F9;
+    
+    /* Text (Ink Color) */
+    --zen-text: #1C2039;
+    --zen-text-secondary: #4A4D62;
+    --zen-text-muted: #8E909D;
+    
+    /* Borders */
+    --zen-border: #E5E7EB;
+    --zen-border-hover: #D1D5DB;
+    
+    /* Accents (Lemon Yellow) */
+    --zen-accent: #F8BB16;
+    --zen-accent-hover: #EAA800;
+    --zen-accent-muted: #FFF8E6;
+
+    /* Status Colors (Subtle) */
+    --zen-success: #059669;
+    --zen-success-muted: #ECFDF5;
+    --zen-warning: #D97706;
+    --zen-warning-muted: #FFFBEB;
+    --zen-error: #DC2626;
+    --zen-error-muted: #FEF2F2;
+    --zen-info: #3B82F6;
+    --zen-info-muted: #EFF6FF;
+    --zen-warm: #E11D48;
+    --zen-warm-muted: #FFF1F2;
+
+    /* ── Typography ── */
+    --zen-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --zen-font-heading: 'Source Serif 4', Georgia, serif;
+    --zen-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+    /* Font Sizes */
+    --zen-text-xs: 0.75rem;     /* 12px */
+    --zen-text-sm: 0.875rem;    /* 14px */
+    --zen-text-base: 1rem;      /* 16px */
+    --zen-text-lg: 1.125rem;    /* 18px */
+    --zen-text-xl: 1.25rem;     /* 20px */
+    --zen-text-2xl: 1.5rem;     /* 24px */
+    --zen-text-3xl: 2rem;       /* 32px */
+    --zen-text-4xl: 2.5rem;     /* 40px */
+    --zen-text-5xl: 3.5rem;     /* 56px */
+
+    /* Line Heights */
+    --zen-leading-none: 1;
+    --zen-leading-tight: 1.25;
+    --zen-leading-normal: 1.5;
+    --zen-leading-relaxed: 1.7;
+    --zen-leading-loose: 2;
+
+    /* ── Spacing ── */
+    --zen-space-xs: 4px;
+    --zen-space-sm: 8px;
+    --zen-space-md: 16px;
+    --zen-space-lg: 24px;
+    --zen-space-xl: 32px;
+    --zen-space-2xl: 48px;
+    --zen-space-3xl: 64px;
+    --zen-space-4xl: 96px;
+
+    /* ── Radii ── */
+    --zen-radius-sm: 4px;
+    --zen-radius-md: 8px;
+    --zen-radius-lg: 12px;
+    --zen-radius-xl: 16px;
+    --zen-radius-pill: 9999px;
+
+    /* ── Shadows (Very soft and elegant) ── */
+    --zen-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --zen-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --zen-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+    --zen-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+
+    /* ── Transitions ── */
+    --zen-duration-fast: 150ms;
+    --zen-duration-normal: 250ms;
+    --zen-duration-slow: 400ms;
+    --zen-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --zen-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* ── Z-Index ── */
+    --zen-z-base: 1;
+    --zen-z-dropdown: 50;
+    --zen-z-sticky: 100;
+    --zen-z-floating: 200;
+    --zen-z-modal: 1000;
+
+    /* ── Layout ── */
+    --zen-layout-width: 1100px;
+}

@@ -1,0 +1,205 @@
+@model LibraryViewModel
+@{
+    ViewData["Title"] = "Trang chủ";
+    var demoState = (Context.Request.Query["state"].ToString() ?? string.Empty).Trim().ToLowerInvariant();
+    var showLoading = demoState == "loading";
+    var showError = demoState == "error";
+    var showEmpty = demoState == "empty";
+    var isLoggedIn = User.Identity?.IsAuthenticated == true;
+    var spotlightBook = Model.FeaturedBooks.FirstOrDefault();
+    var spotlightSideBooks = Model.FeaturedBooks.Skip(1).Take(2).ToList();
+    var continueReading = Model.ContinueReading;
+}
+
+<!-- Hero Minimalist -->
+<section class="zen-hero zen-home-hero">
+    <div class="zen-container">
+        <div class="zen-hero-card zen-home-hero-card">
+            <div class="zen-hero-overlay"></div>
+
+            <div class="zen-hero-content zen-home-hero-content">
+                <div class="zen-hero-spacer"></div>
+                <div class="zen-hero-copy zen-home-hero-copy">
+                    <span class="zen-home-eyebrow">Tóm tắt sách thông minh</span>
+                    <h1>Đọc ít hơn.<br/>Hiểu nhiều hơn.</h1>
+                    <p>Thấu hiểu những tinh hoa tri thức từ hàng ngàn cuốn sách xuất sắc nhất thế giới chỉ trong 15 phút. Nền tảng thiết kế dành riêng cho sự tập trung.</p>
+                    <div class="zen-home-hero-actions">
+                        <a href="/Home/Library" class="zen-hero-cta">Khám phá thư viện</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (showLoading)
+{
+    @await Html.PartialAsync("_LoadingState", new UiStateViewModel
+    {
+        Kind = UiStateKind.Loading,
+        Kicker = "Trang chủ",
+        Title = "Đang chuẩn bị không gian đọc",
+        Description = "Hero, sách khuyên đọc và các thẻ nội dung sẽ hiện ra ngay khi LemonInk nạp xong dữ liệu.",
+        SkeletonCards = 4
+    })
+}
+else if (showError)
+{
+    @await Html.PartialAsync("_ErrorState", new UiStateViewModel
+    {
+        Kind = UiStateKind.Error,
+        Kicker = "Trang chủ",
+        Title = "Không tải được nội dung trang chủ",
+        Description = "Có lỗi xảy ra khi nạp các khối nội dung. Hãy tải lại hoặc quay về thư viện.",
+        Hint = "State này hữu ích khi bạn nối API và muốn hiển thị lỗi mạng hoặc lỗi dữ liệu.",
+        IconSvg = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"/></svg>",
+        PrimaryActionText = "Tải lại trang",
+        PrimaryActionUrl = "/",
+        SecondaryActionText = "Vào thư viện",
+        SecondaryActionUrl = "/Home/Library"
+    })
+}
+else if (showEmpty)
+{
+    @await Html.PartialAsync("_EmptyState", new UiStateViewModel
+    {
+        Kind = UiStateKind.Empty,
+        Kicker = "Trang chủ",
+        Title = "Chưa có nội dung để gợi ý",
+        Description = "Khi backend hoàn thiện, trang chủ sẽ lấy dữ liệu thật để hiển thị sách khuyên đọc, tiến độ và đề xuất cá nhân hóa.",
+        Hint = "Bạn có thể xem preview bằng ?state=empty.",
+        IconSvg = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 19.5A2.5 2.5 0 0 1 6.5 17H20\"/><path d=\"M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\"/></svg>",
+        PrimaryActionText = "Khám phá thư viện",
+        PrimaryActionUrl = "/Home/Library",
+        SecondaryActionText = "Đánh dấu",
+        SecondaryActionUrl = "/Home/Bookmarks"
+    })
+}
+else
+{
+    if (isLoggedIn && continueReading.Any())
+    {
+        <section class="zen-section zen-section-border">
+            <div class="zen-container">
+                <div class="zen-section-header">
+                    <h2 class="zen-section-title">Tiếp tục đọc</h2>
+                    <a href="/Home/Bookmarks" class="zen-section-link">Xem đánh dấu <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+                </div>
+
+                <div class="zen-home-continue-grid">
+                    @foreach (var item in continueReading)
+                    {
+                        <a href="/Home/Read/@item.Book.Id" class="zen-home-continue-card">
+                            <div class="zen-home-continue-cover" style="background: @item.Book.CoverGradient;">
+                                <img src="@item.Book.CoverUrl" alt="Bìa sách @item.Book.Title" class="zen-home-continue-cover-image" loading="lazy" />
+                                <span class="zen-home-continue-badge">@item.Progress%</span>
+                            </div>
+                            <div class="zen-home-continue-body">
+                                <div class="zen-home-continue-topline">
+                                    <span>@item.Book.Category</span>
+                                    <span>@item.LastOpened</span>
+                                </div>
+                                <h3>@item.Book.Title</h3>
+                                <p>@item.Book.Author</p>
+                                <div class="zen-home-progress">
+                                    <div class="zen-home-progress-track">
+                                        <span style="width: @item.Progress%;"></span>
+                                    </div>
+                                    <strong>@item.ProgressLabel</strong>
+                                </div>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    <section class="zen-section zen-section-border">
+        <div class="zen-container">
+            <div class="zen-section-header">
+                <div>
+                    <h2 class="zen-section-title">Khuyên đọc tuần này</h2>
+                    <p class="zen-home-section-lead">Ba cuốn có tương tác đọc và lưu nổi bật nhất trong 7 ngày gần đây.</p>
+                </div>
+                <a href="/Home/Library" class="zen-section-link">Xem tất cả <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+            </div>
+            <div class="zen-home-spotlight">
+                @if (spotlightBook != null)
+                {
+                    <a href="/Books/Detail/@spotlightBook.Id" class="zen-home-spotlight-main">
+                        <div class="zen-home-spotlight-cover" style="background: @spotlightBook.CoverGradient;">
+                            <img src="@spotlightBook.CoverUrl" alt="Bìa sách @spotlightBook.Title" class="zen-home-spotlight-cover-image" loading="lazy" />
+                        </div>
+                        <div class="zen-home-spotlight-body">
+                            <span class="zen-home-spotlight-category">@spotlightBook.Category</span>
+                            <h3>@spotlightBook.Title</h3>
+                            <p>@spotlightBook.Author</p>
+                            <div class="zen-home-spotlight-meta">
+                                <span>@spotlightBook.ReadingTimeMinutes phút đọc</span>
+                                <span>@(spotlightBook.HasRating ? $"{spotlightBook.Rating:0.0}/5" : "Chưa có đánh giá")</span>
+                            </div>
+                            <div class="zen-home-spotlight-note">Một khuyến nghị nổi bật cho phiên đọc ngắn, sâu và dễ vào nhịp.</div>
+                            <span class="zen-home-spotlight-link">Đọc ngay</span>
+                        </div>
+                    </a>
+                }
+
+                <div class="zen-home-spotlight-side">
+                    @foreach (var book in spotlightSideBooks)
+                    {
+                        <a href="/Books/Detail/@book.Id" class="zen-home-mini-card">
+                            <div class="zen-home-mini-cover" style="background: @book.CoverGradient;">
+                                <img src="@book.CoverUrl" alt="Bìa sách @book.Title" class="zen-home-mini-cover-image" loading="lazy" />
+                            </div>
+                            <div class="zen-home-mini-body">
+                                <span>@book.Category</span>
+                                <h4>@book.Title</h4>
+                                <p>@book.Author</p>
+                                <div>@book.ReadingTimeMinutes phút đọc</div>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Books -->
+    <section class="zen-section">
+        <div class="zen-container">
+            <div class="zen-section-header">
+                <h2 class="zen-section-title">Mới xuất bản</h2>
+                <a href="/Home/Library" class="zen-section-link">Xem thêm <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+            </div>
+            <div class="zen-home-slider" data-home-slider>
+                <button type="button" class="zen-home-slider-control" data-home-slider-control="prev" aria-label="Xem sách trước">
+                    <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <div class="zen-home-slider-track" data-home-slider-track>
+                    @foreach (var book in Model.RecentBooks.Take(6))
+                    {
+                        <a href="/Books/Detail/@book.Id" class="zen-book-card">
+                            <div class="zen-book-card-cover" style="background: @book.CoverGradient;">
+                                <img src="@book.CoverUrl" alt="Bìa sách @book.Title" class="zen-book-card-cover-image" loading="lazy" />
+                            </div>
+                            <span class="zen-book-card-category">@book.Category</span>
+                            <h3 class="zen-book-card-title">@book.Title</h3>
+                            <p class="zen-book-card-author">@book.Author</p>
+                            <div class="zen-book-card-meta">
+                                <span>@book.ReadingTimeMinutes phút đọc</span>
+                            </div>
+                        </a>
+                    }
+                </div>
+                <button type="button" class="zen-home-slider-control" data-home-slider-control="next" aria-label="Xem sách tiếp theo">
+                    <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+            </div>
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <script src="~/js/home-slider.js" asp-append-version="true"></script>
+}

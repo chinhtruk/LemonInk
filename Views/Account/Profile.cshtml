@@ -1,0 +1,236 @@
+@{
+    ViewData["Title"] = "Hồ sơ";
+    var userName = ViewData["UserName"]?.ToString() ?? "Người dùng";
+    var userEmail = ViewData["UserEmail"]?.ToString() ?? "";
+    var userRole = ViewData["UserRole"]?.ToString() ?? "Bạn đọc";
+    var avatarUrl = ViewData["AvatarUrl"]?.ToString() ?? "";
+    var hasPlaceholderEmail = ViewData["HasPlaceholderEmail"] as bool? ?? false;
+    var pendingEmail = ViewData["PendingEmail"]?.ToString() ?? "";
+    var initials = userName.Length >= 2 ? userName.Substring(0, 2).ToUpper() : userName.ToUpper();
+}
+
+<div class="zen-container zen-profile-page">
+
+    <div class="zen-profile-card zen-profile-card-hero" style="display: flex; gap: 48px; padding: 48px; flex-wrap: wrap; margin-bottom: 80px;">
+            
+            <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: center; width: 240px; border-right: 1px solid var(--zen-border); padding-right: 48px;">
+                <form method="post" action="/Account/UploadAvatar" enctype="multipart/form-data" class="zen-profile-avatar-form" data-avatar-form>
+                    @Html.AntiForgeryToken()
+                    <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp,image/gif,image/heic,image/heif,.heic,.heif,.dng" class="zen-profile-avatar-input" data-avatar-input />
+                    <button type="button" class="zen-profile-avatar zen-profile-avatar-button" data-avatar-trigger style="width: 120px; height: 120px; font-size: 42px; margin: 0 0 24px 0;" aria-label="Tải avatar mới">
+                        @if (!string.IsNullOrWhiteSpace(avatarUrl))
+                        {
+                            <img src="@avatarUrl" alt="" onerror="this.hidden=true; this.nextElementSibling.hidden=false;" />
+                            <span hidden>@initials</span>
+                        }
+                        else
+                        {
+                            <span>@initials</span>
+                        }
+                        <span class="zen-profile-avatar-overlay">Đổi ảnh</span>
+                    </button>
+                </form>
+                <div style="text-align: center; width: 100%;">
+                    <h2 class="zen-profile-name" style="font-size: 26px; margin-bottom: 6px;">@userName</h2>
+                    @if (hasPlaceholderEmail)
+                    {
+                        <p class="zen-profile-email" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">Chưa bổ sung email</p>
+                    }
+                    else
+                    {
+                        <p class="zen-profile-email" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;" title="@userEmail">@userEmail</p>
+                    }
+                    <div class="zen-profile-pill" style="margin: 16px auto 0;">@userRole</div>
+                    
+                    <div class="zen-profile-meta-list" style="margin-top: 24px; padding-top: 24px; border-top: 1px dashed var(--zen-border); text-align: left;">
+                        <div class="zen-profile-meta-item">
+                            <span class="zen-profile-meta-label">Trạng thái</span>
+                            <span class="zen-profile-meta-value">Đang hoạt động</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="flex: 1; min-width: 320px;">
+                <div class="zen-settings-group" style="padding: 0; border: none; background: transparent;">
+                    <h3 class="zen-settings-title" style="margin-bottom: 24px;">Thông tin tài khoản</h3>
+                    
+                    <div class="zen-settings-row" style="padding-left: 0; padding-right: 0;">
+                        <div>
+                            <div class="zen-settings-label">Họ và tên</div>
+                            <div class="zen-settings-desc">Tên hiển thị trên toàn bộ hệ thống</div>
+                        </div>
+                        <span class="zen-strong-value">@userName</span>
+                    </div>
+                    
+                    <div class="zen-settings-row" style="padding-left: 0; padding-right: 0;">
+                        <div>
+                            <div class="zen-settings-label">Email</div>
+                            <div class="zen-settings-desc">Dùng để đăng nhập và nhận thông báo</div>
+                        </div>
+                        @if (hasPlaceholderEmail)
+                        {
+                            <span class="zen-profile-email-missing">Chưa bổ sung</span>
+                        }
+                        else
+                        {
+                            <span class="zen-strong-value">@userEmail</span>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(pendingEmail))
+                    {
+                        <div class="zen-settings-row" style="padding-left: 0; padding-right: 0;">
+                            <div>
+                                <div class="zen-settings-label">Đang chờ xác nhận</div>
+                                <div class="zen-settings-desc">Email hiện tại chưa thay đổi. Hãy mở liên kết xác nhận được gửi đến địa chỉ mới.</div>
+                            </div>
+                            <span class="zen-strong-value">@pendingEmail</span>
+                        </div>
+                    }
+
+                    @if (hasPlaceholderEmail)
+                    {
+                        <div class="zen-settings-row" style="padding-left: 0; padding-right: 0; border-bottom: none;">
+                            <div>
+                                <div class="zen-settings-label">Bổ sung email</div>
+                                <div class="zen-settings-desc">Thêm email riêng cho LemonInk để nhận thông báo và khôi phục tài khoản.</div>
+                            </div>
+                            <button type="button" class="zen-btn zen-btn-ghost" data-email-toggle>Bổ sung email</button>
+                        </div>
+
+                        <form method="post" action="/Account/UpdateEmail" class="zen-password-form zen-email-form" data-email-form hidden>
+                            @Html.AntiForgeryToken()
+                            <div class="zen-profile-email-control">
+                                <input id="profileEmail" type="email" name="email" placeholder="email@domain.com" autocomplete="email" required />
+                            </div>
+                            <div class="zen-password-actions">
+                                <button type="submit" class="zen-btn zen-btn-primary">Lưu email</button>
+                                <button type="button" class="zen-btn zen-btn-ghost" data-email-cancel>Hủy</button>
+                            </div>
+                        </form>
+                    }
+                    
+                    <div class="zen-settings-row" style="padding-left: 0; padding-right: 0; border-bottom: none;">
+                        <div>
+                            <div class="zen-settings-label">Mật khẩu</div>
+                            <div class="zen-settings-desc">Thay đổi định kỳ để bảo mật tài khoản</div>
+                        </div>
+                        <button type="button" class="zen-btn zen-btn-ghost" data-password-toggle>Đổi mật khẩu</button>
+                    </div>
+
+                    <form method="post" action="/Account/ChangePassword" class="zen-password-form" data-password-form hidden>
+                        @Html.AntiForgeryToken()
+                        <div class="zen-password-grid">
+                            <label>
+                                <span>Mật khẩu hiện tại</span>
+                                <input type="password" name="currentPassword" autocomplete="current-password" required />
+                            </label>
+                            <label>
+                                <span>Mật khẩu mới</span>
+                                <input id="profileNewPassword" type="password" name="newPassword" autocomplete="new-password" minlength="12" required />
+                                <div class="zen-password-strength" data-password-strength-for="profileNewPassword" aria-live="polite">
+                                    <div class="zen-password-strength-track"><span data-password-strength-fill></span></div>
+                                    <p data-password-strength-text>Dùng ít nhất 12 ký tự.</p>
+                                </div>
+                            </label>
+                            <label>
+                                <span>Xác nhận mật khẩu mới</span>
+                                <input type="password" name="confirmPassword" autocomplete="new-password" minlength="12" required />
+                            </label>
+                        </div>
+                        <div class="zen-password-actions">
+                            <button type="submit" class="zen-btn zen-btn-primary">Lưu mật khẩu</button>
+                            <button type="button" class="zen-btn zen-btn-ghost" data-password-cancel>Hủy</button>
+                        </div>
+                    </form>
+
+                    <div class="zen-session-security">
+                        <div>
+                            <strong>Phiên đăng nhập</strong>
+                            <span>Thu hồi phiên trên thiết bị khác nếu bạn nghi ngờ tài khoản đang được dùng ở nơi lạ.</span>
+                        </div>
+                        <form method="post" action="/Account/RevokeOtherSessions">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="zen-btn zen-btn-ghost">Đăng xuất thiết bị khác</button>
+                        </form>
+                    </div>
+
+                    <div style="margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--zen-border); display: flex; gap: 16px;">
+                        <a href="/Home/Library" class="zen-btn zen-btn-primary" style="flex: 1; justify-content: center;">Mở thư viện</a>
+                        <a href="/Home/Bookmarks" class="zen-btn zen-btn-ghost" style="flex: 1; justify-content: center;">Quản lý đánh dấu</a>
+                        <form method="post" action="/Account/Logout" style="flex: 1; display: flex;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="zen-btn zen-btn-ghost" style="flex: 1; justify-content: center;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                Đăng xuất
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const avatarForm = document.querySelector('[data-avatar-form]');
+            const avatarInput = document.querySelector('[data-avatar-input]');
+            const avatarTrigger = document.querySelector('[data-avatar-trigger]');
+            const passwordForm = document.querySelector('[data-password-form]');
+            const passwordToggle = document.querySelector('[data-password-toggle]');
+            const passwordCancel = document.querySelector('[data-password-cancel]');
+            const emailForm = document.querySelector('[data-email-form]');
+            const emailToggle = document.querySelector('[data-email-toggle]');
+            const emailCancel = document.querySelector('[data-email-cancel]');
+
+            if (avatarTrigger && avatarInput && avatarForm) {
+                avatarTrigger.addEventListener('click', function () {
+                    avatarInput.click();
+                });
+
+                avatarInput.addEventListener('change', function () {
+                    if (avatarInput.files && avatarInput.files.length > 0) {
+                        avatarForm.submit();
+                    }
+                });
+            }
+
+            if (passwordToggle && passwordForm) {
+                passwordToggle.addEventListener('click', function () {
+                    passwordForm.hidden = !passwordForm.hidden;
+                    if (!passwordForm.hidden) {
+                        const firstInput = passwordForm.querySelector('input');
+                        if (firstInput) firstInput.focus();
+                    }
+                });
+            }
+
+            if (passwordCancel && passwordForm) {
+                passwordCancel.addEventListener('click', function () {
+                    passwordForm.hidden = true;
+                    passwordForm.reset();
+                });
+            }
+
+            if (emailToggle && emailForm) {
+                emailToggle.addEventListener('click', function () {
+                    emailForm.hidden = !emailForm.hidden;
+                    if (!emailForm.hidden) {
+                        const emailInput = emailForm.querySelector('input[type="email"]');
+                        if (emailInput) emailInput.focus();
+                    }
+                });
+            }
+
+            if (emailCancel && emailForm) {
+                emailCancel.addEventListener('click', function () {
+                    emailForm.hidden = true;
+                    emailForm.reset();
+                });
+            }
+        })();
+    </script>
+}

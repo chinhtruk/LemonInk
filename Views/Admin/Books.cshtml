@@ -1,0 +1,142 @@
+@model AdminBooksPageViewModel
+@{
+    ViewData["Title"] = "Quản lý sách";
+    ViewData["AdminActive"] = "books";
+    Layout = "_AdminLayout";
+}
+
+@await Html.PartialAsync("_AdminSidebar")
+
+<div class="admin-main" data-admin-realtime="books">
+    <div class="admin-realtime-token" hidden>
+        @Html.AntiForgeryToken()
+    </div>
+    <div class="admin-topbar">
+        <div>
+            <h1 class="admin-topbar-title">Quản lý sách</h1>
+            <p class="admin-topbar-subtitle">Theo dõi sách curated, sách user upload, trạng thái publish và audio.</p>
+        </div>
+        <div class="admin-topbar-actions">
+            <a href="/Admin/Books/CreateCurated" class="zen-btn zen-btn-primary">
+                <svg class="admin-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Tạo sách curated
+            </a>
+        </div>
+    </div>
+
+    <div class="admin-table-card">
+        <div class="admin-table-header">
+            <span class="admin-table-title">Tất cả sách</span>
+            <span class="admin-muted-count" data-admin-all-books-count>@Model.Books.Count cuốn</span>
+        </div>
+        <div class="admin-filter-bar" data-admin-books-filter>
+            <label class="admin-filter-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3.5-3.5" />
+                </svg>
+                <input type="search" data-admin-book-search placeholder="Tìm sách, tác giả..." aria-label="Tìm sách trong admin" />
+            </label>
+            <label class="admin-filter-control">
+                <span>Nguồn</span>
+                <select data-admin-book-source aria-label="Lọc theo nguồn sách">
+                    <option value="all">Tất cả</option>
+                    <option value="Curated">Curated</option>
+                    <option value="Uploaded">Uploaded</option>
+                    <option value="Personal">Personal</option>
+                </select>
+            </label>
+            <label class="admin-filter-control">
+                <span>Trạng thái</span>
+                <select data-admin-book-status aria-label="Lọc theo trạng thái sách">
+                    <option value="all">Tất cả</option>
+                    <option value="Published">Published</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Failed">Failed</option>
+                    <option value="ready">Có audio</option>
+                    <option value="missing">Thiếu audio</option>
+                </select>
+            </label>
+            <button type="button" class="admin-filter-reset" data-admin-book-reset aria-label="Đặt lại bộ lọc">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 12a9 9 0 1 0 3-6.7" />
+                    <path d="M3 4v5h5" />
+                </svg>
+            </button>
+        </div>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Tên sách</th>
+                    <th>Nguồn</th>
+                    <th>Hiển thị</th>
+                    <th>Trạng thái</th>
+                    <th>Audio</th>
+                    <th>Tương tác</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody data-admin-all-books-body>
+                @foreach (var book in Model.Books)
+                {
+                    <tr data-admin-book-row
+                        data-title="@book.Title"
+                        data-author="@book.Author"
+                        data-source="@book.Source"
+                        data-visibility="@book.Visibility"
+                        data-status="@book.Status"
+                        data-audio="@(book.IsAudioReady ? "ready" : "missing")">
+                        <td class="title-cell">
+                            <a href="/Home/Read/@book.Id" data-admin-book-highlight>@book.Title</a>
+                            <div class="admin-row-subtitle" data-admin-book-highlight>@book.Author</div>
+                        </td>
+                        <td>@book.Source</td>
+                        <td>@book.Visibility</td>
+                        <td><span class="admin-status-badge @book.Status">@book.Status</span></td>
+                        <td>
+                            <span class="admin-status-badge @(book.IsAudioReady ? "succeeded" : "queued")">
+                                @(book.IsAudioReady ? "ready" : "missing")
+                            </span>
+                        </td>
+                        <td>@book.Views.ToString("N0")</td>
+                        <td class="admin-actions-cell">
+                            <div class="admin-action-stack">
+                            @if (book.Source == "Curated")
+                            {
+                                <a href="/Admin/Books/EditCurated/@book.Id" class="zen-btn zen-btn-ghost">Sửa</a>
+                            }
+                            @if (book.Visibility == "Public")
+                            {
+                                <form asp-controller="Admin" asp-action="Unpublish" asp-route-id="@book.Id" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="zen-btn zen-btn-ghost">Unpublish</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-controller="Admin" asp-action="Publish" asp-route-id="@book.Id" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="zen-btn zen-btn-ghost">Publish</button>
+                                </form>
+                            }
+                            <form asp-controller="Admin" asp-action="RegenerateSummary" asp-route-id="@book.Id" method="post" onsubmit="return confirm('Tạo lại summary cho sách này? Nội dung hiện tại có thể bị thay bằng kết quả AI mới.');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="zen-btn zen-btn-ghost">Re-summary</button>
+                            </form>
+                            <form asp-controller="Admin" asp-action="RegenerateAudio" asp-route-id="@book.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="zen-btn zen-btn-ghost">Re-audio</button>
+                            </form>
+                            <form asp-controller="Admin" asp-action="DeleteBook" asp-route-id="@book.Id" method="post" onsubmit="return confirm('Xóa sách này khỏi hệ thống? Hành động này không thể hoàn tác.');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="zen-btn zen-btn-danger">Xóa</button>
+                            </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

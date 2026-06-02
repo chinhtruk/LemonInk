@@ -1,0 +1,258 @@
+@model AdminAiHealthViewModel
+@{
+    ViewData["Title"] = "AI Health";
+    ViewData["AdminActive"] = "ai";
+    Layout = "_AdminLayout";
+
+    static string BadgeClass(string status) => status switch
+    {
+        "healthy" => "succeeded",
+        "cooldown" => "queued",
+        "warning" => "failed",
+        _ => "cancelled"
+    };
+
+    static string FormatDate(DateTime? value) => value.HasValue
+        ? value.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
+        : "Chưa có";
+
+    static string FormatDuration(long milliseconds) => milliseconds <= 0
+        ? "Chưa có"
+        : milliseconds >= 1000
+            ? $"{milliseconds / 1000d:F1}s"
+            : $"{milliseconds}ms";
+}
+
+@await Html.PartialAsync("_AdminSidebar")
+
+<div class="admin-main" data-admin-realtime="ai-health">
+    <div class="admin-topbar">
+        <div>
+            <h1 class="admin-topbar-title">AI Health</h1>
+            <p class="admin-topbar-subtitle">Theo dõi lượt gọi Gemini, lỗi quota, độ trễ và kết quả pipeline được lưu bền vững.</p>
+        </div>
+        <div class="admin-topbar-actions">
+            <a href="/Admin/ProcessingJobs" class="zen-btn zen-btn-ghost">
+                <svg class="admin-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M12 16v6"/><path d="M4.93 4.93l4.24 4.24"/><path d="M14.83 14.83l4.24 4.24"/><path d="M2 12h6"/><path d="M16 12h6"/></svg>
+                Processing jobs
+            </a>
+        </div>
+    </div>
+
+    <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Healthy</span></div>
+            <div class="admin-stat-value" data-ai-health-stat="healthyCount">@Model.HealthyCount</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Cooldown</span></div>
+            <div class="admin-stat-value" data-ai-health-stat="cooldownCount">@Model.CooldownCount</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Warning</span></div>
+            <div class="admin-stat-value" data-ai-health-stat="warningCount">@Model.WarningCount</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Lỗi 24h</span></div>
+            <div class="admin-stat-value" data-ai-health-stat="recentAiFailures">@Model.RecentAiFailures</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Lượt gọi model 24h</span></div>
+            <div class="admin-stat-value" data-ai-health-stat="modelCalls24Hours">@Model.ModelCalls24Hours</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Tỷ lệ thành công 24h</span></div>
+            <div class="admin-stat-value"><span data-ai-health-stat-rate="successRate24Hours">@Model.SuccessRate24Hours.ToString("F1")</span>%</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Quota / rate limit 24h</span></div>
+            <div class="admin-stat-value" data-ai-health-stat="quotaOrRateLimitErrors24Hours">@Model.QuotaOrRateLimitErrors24Hours</div>
+        </div>
+    </div>
+
+    <div class="admin-table-card">
+        <div class="admin-table-header">
+            <span class="admin-table-title">Pipeline xử lý sách trong 24 giờ</span>
+            <span class="admin-muted-count">Quality gate, retry và thời gian chạy</span>
+        </div>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Công đoạn</th>
+                    <th>Tổng job</th>
+                    <th>Thành công</th>
+                    <th>Lỗi</th>
+                    <th>Retry</th>
+                    <th>Tỷ lệ đạt</th>
+                    <th>Thời gian TB</th>
+                    <th>Lỗi gần nhất</th>
+                </tr>
+            </thead>
+            <tbody data-ai-health-pipeline-body>
+                @foreach (var pipeline in Model.PipelineJobs24Hours)
+                {
+                    <tr>
+                        <td class="title-cell">@pipeline.Type</td>
+                        <td>@pipeline.TotalCount</td>
+                        <td>@pipeline.SucceededCount</td>
+                        <td>@pipeline.FailedCount</td>
+                        <td>@pipeline.RetryCount</td>
+                        <td>@pipeline.SuccessRatePercent.ToString("F1")%</td>
+                        <td>@(pipeline.AverageDurationSeconds.HasValue ? $"{pipeline.AverageDurationSeconds}s" : "-")</td>
+                        <td>
+                            @if (string.IsNullOrWhiteSpace(pipeline.LatestFailure))
+                            {
+                                <span class="admin-row-subtitle">Chưa có</span>
+                            }
+                            else
+                            {
+                                <div class="admin-error-text">@pipeline.LatestFailure</div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="admin-table-card">
+        <div class="admin-table-header">
+            <span class="admin-table-title">Model router</span>
+            <span class="admin-muted-count">@Model.Models.Count model</span>
+        </div>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Tác vụ</th>
+                    <th>Model</th>
+                    <th>Trạng thái</th>
+                    <th>Thành công</th>
+                    <th>Lỗi</th>
+                    <th>Tỷ lệ đạt</th>
+                    <th>Độ trễ TB</th>
+                    <th>Quota / limit</th>
+                    <th>Cooldown tới</th>
+                    <th>Lỗi gần nhất</th>
+                </tr>
+            </thead>
+            <tbody data-ai-health-models-body>
+                @foreach (var aiModel in Model.Models)
+                {
+                    <tr>
+                        <td>@aiModel.Task</td>
+                        <td class="title-cell">@aiModel.Model</td>
+                        <td><span class="admin-status-badge @BadgeClass(aiModel.Status)">@aiModel.Status</span></td>
+                        <td>@aiModel.SuccessCount</td>
+                        <td>@aiModel.FailureCount</td>
+                        <td>@aiModel.SuccessRatePercent.ToString("F1")%</td>
+                        <td>@FormatDuration(aiModel.AverageDurationMilliseconds)</td>
+                        <td>@aiModel.QuotaOrRateLimitFailureCount</td>
+                        <td>@FormatDate(aiModel.CooldownUntil)</td>
+                        <td>
+                            @if (string.IsNullOrWhiteSpace(aiModel.LastError))
+                            {
+                                <span class="admin-row-subtitle">Chưa có</span>
+                            }
+                            else
+                            {
+                                <div class="admin-error-text">@aiModel.LastError</div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="admin-table-card">
+        <div class="admin-table-header">
+            <span class="admin-table-title">Lần gọi model gần đây</span>
+            <span class="admin-muted-count" data-ai-health-operations-count>@Model.RecentOperations.Count event</span>
+        </div>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Tác vụ</th>
+                    <th>Model</th>
+                    <th>Kết quả</th>
+                    <th>Độ trễ</th>
+                    <th>Loại lỗi</th>
+                    <th>Chi tiết</th>
+                </tr>
+            </thead>
+            <tbody data-ai-health-operations-body>
+                @foreach (var operation in Model.RecentOperations)
+                {
+                    <tr>
+                        <td>@operation.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                        <td>@operation.Task</td>
+                        <td class="title-cell">@operation.Model</td>
+                        <td><span class="admin-status-badge @(operation.Succeeded ? "succeeded" : "failed")">@(operation.Succeeded ? "succeeded" : "failed")</span></td>
+                        <td>@FormatDuration(operation.DurationMilliseconds)</td>
+                        <td>@(operation.FailureKind ?? "-")</td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(operation.ErrorMessage))
+                            {
+                                <div class="admin-error-text">@operation.ErrorMessage</div>
+                            }
+                            else
+                            {
+                                <span class="admin-row-subtitle">Không có lỗi</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="admin-table-card">
+        <div class="admin-table-header">
+            <span class="admin-table-title">Job AI gần đây</span>
+            <span class="admin-muted-count" data-ai-health-jobs-count>@Model.RecentJobs.Count job</span>
+        </div>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Job</th>
+                    <th>Sách</th>
+                    <th>Trạng thái</th>
+                    <th>Tiến độ</th>
+                    <th>Thời gian chạy</th>
+                    <th>Bước hiện tại</th>
+                </tr>
+            </thead>
+            <tbody data-ai-health-jobs-body>
+                @foreach (var job in Model.RecentJobs)
+                {
+                    <tr>
+                        <td class="title-cell">
+                            #@job.Id
+                            <div class="admin-row-subtitle">@job.Type</div>
+                        </td>
+                        <td>
+                            <a href="/Home/Read/@job.BookId">@job.BookTitle</a>
+                            <div class="admin-row-subtitle">@job.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                        </td>
+                        <td><span class="admin-status-badge @job.Status">@job.Status</span></td>
+                        <td>
+                            <div class="admin-progress">
+                                <span style="width: @job.ProgressPercent%;"></span>
+                            </div>
+                            <div class="admin-row-subtitle">@job.ProgressPercent%</div>
+                        </td>
+                        <td>@(job.DurationSeconds.HasValue ? $"{job.DurationSeconds}s" : "-")</td>
+                        <td>
+                            @job.CurrentStep
+                            @if (!string.IsNullOrWhiteSpace(job.ErrorMessage))
+                            {
+                                <div class="admin-error-text">@job.ErrorMessage</div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,58 @@
+@model ZenRead.ViewModels.BookSummary
+@{
+    var durationSeconds = Model.AudioDurationSeconds ?? Math.Max(60, Model.ReadingTimeMinutes * 60);
+    var duration = TimeSpan.FromSeconds(durationSeconds);
+    var durationText = duration.TotalHours >= 1
+        ? duration.ToString(@"h\:mm\:ss")
+        : duration.ToString(@"mm\:ss");
+}
+
+<!-- Audio Player -->
+<div id="zenAudioPlayer" class="zen-audio-player" aria-live="polite" data-duration-seconds="@durationSeconds">
+    <audio id="zenAudioElement" src="@Model.AudioUrl" preload="metadata"></audio>
+
+    <div class="zen-audio-transport" aria-label="Điều khiển audio">
+        <button id="zenAudioRewind" class="zen-audio-btn" aria-label="Tua lại 15 giây" title="Tua lại 15s" type="button">
+            <svg viewBox="0 0 24 24"><polygon points="11 19 2 12 11 5 11 19"/><polygon points="22 19 13 12 22 5 22 19"/></svg>
+        </button>
+        <button id="zenAudioPlayBtn" class="zen-audio-btn zen-audio-btn-play play-btn" aria-label="Phát / Tạm dừng" type="button">
+            <svg viewBox="0 0 24 24">
+                <path d="M6 3l14 9-14 9V3z" fill="currentColor" stroke="none"/>
+            </svg>
+        </button>
+        <button id="zenAudioForward" class="zen-audio-btn" aria-label="Tua tới 15 giây" title="Tua tới 15s" type="button">
+            <svg viewBox="0 0 24 24"><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></svg>
+        </button>
+    </div>
+
+    <div class="zen-audio-info">
+        <img src="@Model.CoverUrl" alt="Bìa sách @Model.Title" class="zen-audio-artwork" />
+        <div class="zen-audio-nowplaying">
+            <div class="zen-audio-row">
+                <div class="zen-audio-title">@Model.Title</div>
+                <div class="zen-audio-artist">@Model.Author</div>
+            </div>
+            <div class="zen-audio-progress-wrap">
+                <input id="zenAudioSeek" class="zen-audio-progress" type="range" min="0" max="@durationSeconds" value="0" step="1" aria-label="Tiến trình audio" />
+                <div id="zenAudioProgressFill" class="zen-audio-progress-fill"></div>
+            </div>
+            <div class="zen-audio-time">
+                <span id="zenAudioCurrentTime">00:00</span>
+                <span id="zenAudioDuration">@durationText</span>
+                <span id="zenAudioMinuteLabel" class="zen-audio-minute-label">Đã nghe 0 phút</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="zen-audio-tools">
+        <label class="zen-audio-speed" title="Tốc độ phát">
+            <select id="zenAudioSpeed" aria-label="Tốc độ phát audio">
+                <option value="0.75">0.75x</option>
+                <option value="1" selected>1x</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2">2x</option>
+            </select>
+        </label>
+    </div>
+</div>

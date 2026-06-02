@@ -1,0 +1,48 @@
+@model UiStateViewModel
+
+<section class="zen-state zen-state--loading">
+    <div class="zen-state-header">
+        <div class="zen-state-icon zen-state-icon--loading">
+            @if (!string.IsNullOrWhiteSpace(Model.IconSvg))
+            {
+                @Html.Raw(Model.IconSvg)
+            }
+            else
+            {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+            }
+        </div>
+        <div>
+            <div class="zen-state-kicker">@Model.Kicker</div>
+            <h2>@Model.Title</h2>
+            <p>@Model.Description</p>
+        </div>
+    </div>
+
+    <div class="zen-state-skeleton">
+        <div class="zen-skeleton-bar zen-skeleton-bar--wide"></div>
+        <div class="zen-skeleton-bar zen-skeleton-bar--medium"></div>
+        <div class="zen-skeleton-bar zen-skeleton-bar--short"></div>
+    </div>
+
+    <div class="zen-state-loading-grid">
+        @for (var i = 0; i < Model.SkeletonCards; i++)
+        {
+            <article class="zen-loading-card">
+                <div class="zen-loading-cover">
+                    <span class="zen-loading-badge"></span>
+                    <span class="zen-loading-icon"></span>
+                </div>
+                <div class="zen-loading-body">
+                    <span class="zen-skeleton-line zen-skeleton-line--xs"></span>
+                    <span class="zen-skeleton-line zen-skeleton-line--lg"></span>
+                    <span class="zen-skeleton-line zen-skeleton-line--md"></span>
+                    <span class="zen-skeleton-line zen-skeleton-line--sm"></span>
+                </div>
+            </article>
+        }
+    </div>
+</section>

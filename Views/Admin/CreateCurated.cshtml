@@ -1,0 +1,93 @@
+@model AdminCreateCuratedBookViewModel
+@{
+    ViewData["Title"] = Model.IsEdit ? "Sửa sách curated" : "Tạo sách curated";
+    ViewData["AdminActive"] = "books";
+    Layout = "_AdminLayout";
+    var formAction = Model.IsEdit ? "EditCurated" : "CreateCurated";
+}
+
+@await Html.PartialAsync("_AdminSidebar")
+
+<div class="admin-main">
+    <div class="admin-topbar">
+        <div>
+            <h1 class="admin-topbar-title">@(Model.IsEdit ? "Sửa sách curated" : "Tạo sách curated")</h1>
+            <p class="admin-topbar-subtitle">@(Model.IsEdit ? "Cập nhật metadata, summary, takeaway và chương đọc. Audio cũ sẽ cần tạo lại nếu nội dung thay đổi." : "Thêm sách có sẵn của LemonInk cùng summary, takeaway và chương đọc.")</p>
+        </div>
+        <div class="admin-topbar-actions">
+            <a href="/Admin/Books" class="zen-btn zen-btn-ghost">
+                <svg class="admin-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Quay lại
+            </a>
+        </div>
+    </div>
+
+    <form asp-controller="Admin" asp-action="@formAction" asp-route-id="@Model.Id" method="post" class="admin-form-card">
+        @Html.AntiForgeryToken()
+        <input asp-for="Id" type="hidden" />
+
+        <div asp-validation-summary="All" class="admin-validation"></div>
+
+        <div class="admin-form-grid">
+            <label class="admin-field">
+                <span>Tên sách</span>
+                <input asp-for="Title" class="admin-input" placeholder="Ví dụ: The Practice" />
+            </label>
+            <label class="admin-field">
+                <span>Tác giả</span>
+                <input asp-for="AuthorName" class="admin-input" placeholder="Ví dụ: Seth Godin" />
+            </label>
+            <label class="admin-field">
+                <span>Thể loại</span>
+                <input asp-for="Category" class="admin-input" placeholder="Kinh doanh, Tâm lý học..." />
+            </label>
+            <label class="admin-field">
+                <span>Điểm đánh giá</span>
+                <input asp-for="Rating" class="admin-input" type="number" step="0.1" min="0" max="10" />
+            </label>
+            <label class="admin-field">
+                <span>Thời gian đọc</span>
+                <input asp-for="ReadingTimeMinutes" class="admin-input" type="number" min="1" />
+            </label>
+            <label class="admin-field">
+                <span>Cover URL</span>
+                <input asp-for="CoverUrl" class="admin-input" placeholder="/images/covers/example.svg" />
+            </label>
+        </div>
+
+        <label class="admin-field">
+            <span>Cover gradient</span>
+            <input asp-for="CoverGradient" class="admin-input" />
+        </label>
+
+        <label class="admin-field">
+            <span>Mô tả ngắn</span>
+            <textarea asp-for="Description" class="admin-textarea small" placeholder="Một đoạn ngắn dùng cho card sách và summary ngắn."></textarea>
+        </label>
+
+        <label class="admin-field">
+            <span>Tóm tắt tổng quan</span>
+            <textarea asp-for="Introduction" class="admin-textarea" placeholder="Nội dung tổng quan của sách."></textarea>
+        </label>
+
+        <label class="admin-field">
+            <span>Key takeaways</span>
+            <textarea asp-for="TakeawaysText" class="admin-textarea small" placeholder="- Ý chính 1&#10;- Ý chính 2&#10;- Ý chính 3"></textarea>
+        </label>
+
+        <label class="admin-field">
+            <span>Chương / section</span>
+            <textarea asp-for="ChaptersText" class="admin-textarea large" placeholder="Chương 1: Tên chương&#10;Nội dung chương 1...&#10;&#10;Chương 2: Tên chương&#10;Nội dung chương 2..."></textarea>
+        </label>
+
+        <label class="admin-checkbox">
+            <input asp-for="PublishImmediately" />
+            <span>Publish ngay trong thư viện public</span>
+        </label>
+
+        <div class="admin-form-actions">
+            <a href="/Admin/Books" class="zen-btn zen-btn-ghost">Hủy</a>
+            <button type="submit" class="zen-btn zen-btn-primary">@(Model.IsEdit ? "Lưu thay đổi" : "Tạo sách")</button>
+        </div>
+    </form>
+</div>

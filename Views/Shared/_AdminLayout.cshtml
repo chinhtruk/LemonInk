@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="LemonInk Admin — Quản trị nội dung và theo dõi hoạt động" />
+    <title>@ViewData["Title"] — LemonInk Admin</title>
+    <link rel="icon" type="image/png" href="/favicon.png?v=20260513-icon2" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260513-icon2" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/animations.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body>
+    @{
+        var toastMessages = new List<object>();
+        var adminSuccess = TempData["AdminSuccess"]?.ToString();
+        var adminError = TempData["AdminError"]?.ToString();
+
+        if (!string.IsNullOrWhiteSpace(adminSuccess))
+        {
+            toastMessages.Add(new { message = adminSuccess, tone = "success" });
+        }
+
+        if (!string.IsNullOrWhiteSpace(adminError))
+        {
+            toastMessages.Add(new { message = adminError, tone = "error" });
+        }
+    }
+
+    <div class="admin-layout">
+        @RenderBody()
+    </div>
+
+    @if (toastMessages.Count > 0)
+    {
+        <script type="application/json" id="lemonToastPayload">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(toastMessages))</script>
+    }
+    <script src="~/js/toasts.js" asp-append-version="true"></script>
+    <script src="~/js/search-utils.js" asp-append-version="true"></script>
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

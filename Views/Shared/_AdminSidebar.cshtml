@@ -1,0 +1,53 @@
+@{
+    var active = (ViewData["AdminActive"] as string) ?? "dashboard";
+}
+
+<aside class="admin-sidebar">
+    <div class="admin-sidebar-brand">
+        <img src="/images/LemonInk.png?v=4" alt="LemonInk" class="admin-sidebar-logo" />
+        <span class="admin-sidebar-brand-badge">Admin</span>
+    </div>
+
+    <ul class="admin-nav">
+        <li class="admin-nav-section">Tổng quan</li>
+        <li>
+            <a href="/Admin" class="admin-nav-link @(active == "dashboard" ? "active" : "")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                Dashboard
+            </a>
+        </li>
+        <li class="admin-nav-section">Nội dung</li>
+        <li>
+            <a href="/Admin/Books" class="admin-nav-link @(active == "books" ? "active" : "")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Quản lý sách
+            </a>
+        </li>
+        <li>
+            <a href="/Admin/ProcessingJobs" class="admin-nav-link @(active == "jobs" ? "active" : "")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M12 16v6"/><path d="M4.93 4.93l4.24 4.24"/><path d="M14.83 14.83l4.24 4.24"/><path d="M2 12h6"/><path d="M16 12h6"/><path d="M4.93 19.07l4.24-4.24"/><path d="M14.83 9.17l4.24-4.24"/></svg>
+                Processing jobs
+            </a>
+        </li>
+        <li>
+            <a href="/Admin/AiHealth" class="admin-nav-link @(active == "ai" ? "active" : "")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="3"/></svg>
+                AI Health
+            </a>
+        </li>
+        <li class="admin-nav-section">Hệ thống</li>
+        <li>
+            <a href="/Admin/Users" class="admin-nav-link @(active == "users" ? "active" : "")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Người dùng
+            </a>
+        </li>
+    </ul>
+
+    <div class="zen-sidebar-footer">
+        <a href="/" class="admin-nav-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Về trang chủ
+        </a>
+    </div>
+</aside>

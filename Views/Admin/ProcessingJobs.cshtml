@@ -1,0 +1,126 @@
+@model AdminProcessingJobsPageViewModel
+@{
+    ViewData["Title"] = "Processing jobs";
+    ViewData["AdminActive"] = "jobs";
+    Layout = "_AdminLayout";
+}
+
+@await Html.PartialAsync("_AdminSidebar")
+
+<div class="admin-main" data-admin-realtime="jobs">
+    <div class="admin-realtime-token" hidden>
+        @Html.AntiForgeryToken()
+    </div>
+    <div class="admin-topbar">
+        <div>
+            <h1 class="admin-topbar-title">Processing jobs</h1>
+            <p class="admin-topbar-subtitle">Theo dõi extract, summarize, audio và retry các job đang lỗi.</p>
+        </div>
+        <div class="admin-topbar-actions">
+            <a href="/Admin" class="zen-btn zen-btn-ghost">
+                <svg class="admin-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Queued</span></div>
+            <div class="admin-stat-value" data-admin-stat="queuedCount">@Model.QueuedCount</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Running</span></div>
+            <div class="admin-stat-value" data-admin-stat="runningCount">@Model.RunningCount</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Failed</span></div>
+            <div class="admin-stat-value" data-admin-stat="failedCount">@Model.FailedCount</div>
+        </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header"><span class="admin-stat-label">Succeeded</span></div>
+            <div class="admin-stat-value" data-admin-stat="succeededCount">@Model.SucceededCount</div>
+        </div>
+    </div>
+
+    <div class="admin-table-card">
+        <div class="admin-table-header">
+            <span class="admin-table-title">Job gần đây</span>
+            <span class="admin-muted-count" data-admin-jobs-count>@Model.Jobs.Count job</span>
+        </div>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Job</th>
+                    <th>Sách</th>
+                    <th>Trạng thái</th>
+                    <th>Tiến độ</th>
+                    <th>Chất lượng</th>
+                    <th>Bước hiện tại</th>
+                    <th>Retry</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody data-admin-jobs-body>
+                @foreach (var job in Model.Jobs)
+                {
+                    <tr data-admin-job-row data-job-id="@job.Id">
+                        <td class="title-cell">
+                            #@job.Id
+                            <div class="admin-row-subtitle">@job.Type</div>
+                        </td>
+                        <td>
+                            <a href="/Home/Read/@job.BookId">@job.BookTitle</a>
+                            <div class="admin-row-subtitle">@job.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                        </td>
+                        <td><span class="admin-status-badge @job.Status">@job.Status</span></td>
+                        <td>
+                            <div class="admin-progress">
+                                <span style="width: @job.ProgressPercent%;"></span>
+                            </div>
+                            <div class="admin-row-subtitle">@job.ProgressPercent%</div>
+                        </td>
+                        <td class="admin-quality-cell">
+                            @if (string.IsNullOrWhiteSpace(job.QualitySummary))
+                            {
+                                <span class="admin-row-subtitle">Chưa có báo cáo</span>
+                            }
+                            else
+                            {
+                                var qualityLabel = job.QualityStatus switch
+                                {
+                                    "warning" => "Cảnh báo",
+                                    "failed" => "Lỗi",
+                                    _ => "Ổn"
+                                };
+                                <span class="admin-quality-badge @(job.QualityStatus ?? "passed")">@qualityLabel</span>
+                                <div class="admin-quality-summary">@job.QualitySummary</div>
+                                @if (!string.IsNullOrWhiteSpace(job.QualityWarnings))
+                                {
+                                    <div class="admin-quality-warning">@job.QualityWarnings</div>
+                                }
+                            }
+                        </td>
+                        <td>
+                            @job.CurrentStep
+                            @if (!string.IsNullOrWhiteSpace(job.ErrorMessage))
+                            {
+                                <div class="admin-error-text">@job.ErrorMessage</div>
+                            }
+                        </td>
+                        <td>@job.RetryCount</td>
+                        <td class="admin-actions-cell">
+                            @if (job.CanRetry)
+                            {
+                                <form asp-controller="Admin" asp-action="RetryProcessingJob" asp-route-id="@job.Id" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="zen-btn zen-btn-primary">Retry</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

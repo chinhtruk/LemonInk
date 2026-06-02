@@ -1,0 +1,64 @@
+@{
+    var suggestions = ViewData["ChatSuggestions"] as IReadOnlyList<ChatSuggestion> ?? new List<ChatSuggestion>
+    {
+        new() { Label = "Tóm tắt nhanh", Prompt = "Tóm tắt cuốn sách trong 3 ý chính dễ nhớ." },
+        new() { Label = "Ý chính", Prompt = "Ý chính quan trọng nhất của cuốn sách này là gì?" },
+        new() { Label = "Ứng dụng", Prompt = "Tôi có thể áp dụng điều gì từ cuốn sách này?" }
+    };
+    var chatBookTitle = ViewData["ChatBookTitle"]?.ToString();
+    var chatBookAuthor = ViewData["ChatBookAuthor"]?.ToString();
+    var introMessage = !string.IsNullOrWhiteSpace(chatBookTitle) && !string.IsNullOrWhiteSpace(chatBookAuthor)
+        ? $"Chào bạn, mình là LemonAI. Mình đang đọc cùng bạn cuốn \"{chatBookTitle}\" của {chatBookAuthor}. Bạn có thể hỏi mình về ý chính, từng chương, nhân vật, khái niệm hoặc cách áp dụng nội dung trong sách."
+        : "Chào bạn, mình là LemonAI. Mình có thể giải thích ý chính, thuật ngữ hoặc tìm đoạn liên quan trong cuốn sách này.";
+}
+
+<!-- Chat AI Panel -->
+<div id="zenChatPanel" class="zen-chat-panel" aria-label="Hỏi đáp AI" data-book-id="@ViewData["ChatBookId"]" data-book-title="@chatBookTitle">
+    <div class="zen-chat-header">
+        <div class="zen-chat-brand-mark">L</div>
+        <div class="zen-chat-header-copy">
+            <h2 class="zen-chat-header-title">LemonAI</h2>
+            <p class="zen-chat-header-desc">Hỏi đáp theo nội dung sách</p>
+        </div>
+        <button id="zenChatClose" class="zen-chat-close" aria-label="Đóng">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="zen-chat-surface">
+        <div class="zen-chat-suggested" aria-label="Gợi ý câu hỏi nhanh">
+            @foreach (var suggestion in suggestions.Take(3))
+            {
+                <button type="button" class="zen-chat-chip" data-chat-suggest="@suggestion.Prompt">@suggestion.Label</button>
+            }
+        </div>
+
+        <div class="zen-chat-thread">
+            <div id="zenChatMessages" class="zen-chat-messages">
+                <div class="zen-chat-message ai zen-chat-bubble-intro">
+                    <div class="zen-chat-avatar">L</div>
+                    <div class="zen-chat-bubble">
+                        <div class="zen-chat-bubble-label">LemonAI</div>
+                        <div class="zen-chat-bubble-text">@introMessage</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="zenChatForm" class="zen-chat-input-area">
+        <div class="zen-chat-input-shell">
+            <div class="zen-chat-textbox">
+                <textarea id="zenChatInput" class="zen-chat-input" rows="1" placeholder="Hỏi bất cứ điều gì về cuốn sách..." autocomplete="off" autocapitalize="sentences" spellcheck="false"></textarea>
+            </div>
+            <button id="zenChatSend" class="zen-chat-send" type="submit" aria-label="Gửi">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3.25 4.75 21.25 12 3.25 19.25 5.15 13.35 13.75 12 5.15 10.65 3.25 4.75Z"/>
+                </svg>
+            </button>
+        </div>
+    </form>
+</div>

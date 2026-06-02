@@ -1,0 +1,415 @@
+@model ZenRead.ViewModels.BookUploadFormViewModel
+@using ZenRead.Entities
+@{
+    ViewData["Title"] = "Thư viện cá nhân";
+    var processingCount = Model.RecentUploads.Count(item => IsProcessing(item.ProcessingStatus));
+    var readyCount = Model.RecentUploads.Count(item => CanRead(item.ProcessingStatus));
+    var failedCount = Model.RecentUploads.Count(item => HasFailedJob(item));
+    var activeStatus = (Context.Request.Query["status"].ToString() ?? "all").Trim().ToLowerInvariant();
+}
+
+<div class="zen-container zen-upload-page zen-my-library-upload-page">
+    <div class="zen-upload-twocol-layout">
+        
+        <!-- CỘT TRÁI: THỐNG KÊ VÀ HÀNH ĐỘNG -->
+        <div class="zen-upload-left">
+            <form class="zen-upload-central-card" method="post" enctype="multipart/form-data" action="/Books/Upload">
+                @Html.AntiForgeryToken()
+
+                <!-- Dropzone State 1 -->
+                <div id="central-dropzone" class="zen-central-dropzone">
+                    <input type="file" id="book-file-input" name="File" accept=".pdf,.epub,.txt,application/pdf,text/plain" required />
+                    
+                    <h2>Tải sách lên</h2>
+                    
+                    <div class="zen-central-dropzone-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    
+                    <h3>Kéo thả file vào đây</h3>
+                    <p>Hoặc click để duyệt file từ thiết bị</p>
+                    
+                    <div class="zen-central-formats">
+                        <span>PDF</span>
+                        <span>EPUB</span>
+                        <span>TXT</span>
+                    </div>
+                </div>
+
+                <!-- Form State 2 -->
+                <div id="central-form" class="zen-central-form" style="display: none;">
+                    <div class="zen-central-preview">
+                        <div class="zen-central-preview-icon" id="preview-icon"></div>
+                        <div class="zen-central-preview-info">
+                            <h3 id="preview-filename">book.pdf</h3>
+                            <span id="preview-filesize">0 KB</span>
+                        </div>
+                        <button type="button" id="preview-change-btn" class="zen-central-change-btn">Đổi file</button>
+                    </div>
+
+                    <div class="zen-central-form-body">
+                        <div class="zen-upload-field-grid zen-upload-info-grid">
+                            <label class="zen-upload-field zen-upload-field-full">
+                                <span>Tên sách</span>
+                                <div class="zen-input-group">
+                                    <input type="text" name="Title" value="@Model.Title" placeholder="Ví dụ: Tư duy hệ thống" />
+                                    <span class="zen-input-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </label>
+
+                            <label class="zen-upload-field zen-upload-field-full">
+                                <span>Tác giả</span>
+                                <div class="zen-input-group">
+                                    <input type="text" name="AuthorName" value="@Model.AuthorName" placeholder="Chưa xác định" />
+                                    <span class="zen-input-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 20h9"></path>
+                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </label>
+
+                            <label class="zen-upload-field">
+                                <span>Thể loại</span>
+                                <div class="zen-input-group">
+                                    <input type="text" name="Category" value="@Model.Category" placeholder="Tự do" />
+                                    <span class="zen-input-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                                            <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </label>
+
+                            <label class="zen-upload-field">
+                                <span>Ngôn ngữ</span>
+                                <div class="zen-input-group">
+                                    <select name="Language" class="zen-select">
+                                        @if (Model.Language == "en")
+                                        {
+                                            <option value="vi">Tiếng Việt</option>
+                                            <option value="en" selected>Tiếng Anh</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="vi" selected>Tiếng Việt</option>
+                                            <option value="en">Tiếng Anh</option>
+                                        }
+                                    </select>
+                                    <span class="zen-input-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="zen-central-actions">
+                            <button type="submit" class="zen-btn zen-btn-primary zen-btn-large">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Tải sách lên
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <div class="zen-upload-central-card" style="padding: 24px; margin-top: 24px;">
+                <div class="zen-my-library-summary" style="display: flex; flex-direction: column; gap: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--zen-border);">
+                        <span style="color: var(--zen-text-secondary); font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--zen-border-hover);"></span>
+                            Tổng sách
+                        </span>
+                        <strong style="font-size: 16px; font-weight: 600;">@Model.RecentUploads.Count</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--zen-border);">
+                        <span style="color: var(--zen-text-secondary); font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--zen-accent);"></span>
+                            Đang xử lý
+                        </span>
+                        <strong style="font-size: 16px; font-weight: 600;">@processingCount</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--zen-border);">
+                        <span style="color: var(--zen-text-secondary); font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--zen-success);"></span>
+                            Có thể đọc
+                        </span>
+                        <strong style="font-size: 16px; font-weight: 600;">@readyCount</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px;">
+                        <span style="color: var(--zen-text-secondary); font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--zen-error);"></span>
+                            Cần retry
+                        </span>
+                        <strong style="font-size: 16px; font-weight: 600;">@failedCount</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CỘT PHẢI: DANH SÁCH -->
+        <div class="zen-upload-right">
+            @if (Model.RecentUploads.Count > 0)
+            {
+                <div class="zen-upload-filter-row-compact" data-upload-library-filter data-initial-filter="@activeStatus">
+                    <div class="zen-upload-search-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="search" data-upload-search placeholder="Tìm theo tên sách hoặc file..." />
+                    </div>
+                    <select class="zen-upload-filter-select" data-upload-filter-select title="Lọc trạng thái">
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="processing">Đang xử lý</option>
+                        <option value="ready">Sẵn sàng</option>
+                        <option value="failed">Cần retry</option>
+                    </select>
+                </div>
+
+                <div class="zen-upload-list-compact">
+                    @foreach (var item in Model.RecentUploads)
+                    {
+                        var canRead = CanRead(item.ProcessingStatus);
+                        var isFailed = HasFailedJob(item);
+                        var progress = ResolveProgress(item);
+                        var extension = System.IO.Path.GetExtension(item.OriginalFileName)?.ToLowerInvariant() ?? "";
+                        var fileTypeClass = extension == ".pdf" ? "pdf" : (extension == ".epub" ? "epub" : "txt");
+
+                        <article class="zen-upload-item-compact" data-upload-status-card data-book-id="@item.Id" data-processing-status="@item.ProcessingStatus" data-latest-job-status="@item.LatestJobStatus">
+                            
+                            <div class="zen-upload-item-type-icon @fileTypeClass" title="@fileTypeClass.ToUpper()">
+                                @if (fileTypeClass == "pdf") { <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> }
+                                else if (fileTypeClass == "epub") { <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> }
+                                else { <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg> }
+                            </div>
+
+                            <div class="zen-upload-item-main-compact">
+                                <div class="zen-upload-item-header">
+                                    <div class="zen-upload-item-title-col">
+                                        <h3>@item.Title</h3>
+                                        <p>@item.OriginalFileName</p>
+                                    </div>
+                                    <span class="zen-status-badge @GetStatusClass(item.ProcessingStatus)" data-upload-status-label>
+                                        @GetStatusText(item.ProcessingStatus)
+                                    </span>
+                                </div>
+
+                                <div class="zen-upload-progress-container">
+                                    <div class="zen-upload-progress-head">
+                                        <strong data-upload-progress-percent>@progress%</strong>
+                                        <small data-upload-estimate>@item.EstimatedTimeText</small>
+                                    </div>
+                                    <div class="zen-upload-progress-track">
+                                        <span data-upload-progress-fill style="width: @progress%"></span>
+                                    </div>
+                                    <small data-upload-step>@(string.IsNullOrWhiteSpace(item.LatestJobStep) ? "Đang chuẩn bị..." : item.LatestJobStep)</small>
+                                    <small class="zen-my-library-error" data-upload-error hidden="@(!isFailed || string.IsNullOrWhiteSpace(item.FailedReason))">@item.FailedReason</small>
+                                </div>
+
+                                <div class="zen-upload-item-actions-compact">
+                                    <a href="/Home/Read/@item.Id" class="zen-btn zen-btn-primary" data-upload-read-link hidden="@(!canRead)">Mở</a>
+                                    <button type="button" class="zen-btn zen-btn-ghost" data-upload-wait-button disabled hidden="@(canRead)">Chờ</button>
+                                    
+                                    <form method="post" action="/Books/RetryProcessing/@item.Id" data-upload-retry-form hidden="@(!isFailed)">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="zen-btn zen-btn-ghost">Thử lại</button>
+                                    </form>
+
+                                    <form method="post" action="/Books/ReprocessFromSource/@item.Id" data-upload-reprocess-form hidden="@(!canRead)" onsubmit="return confirm('Tạo lại bản tóm tắt và audio từ file gốc? Quá trình này có thể mất vài phút.');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="zen-btn zen-btn-ghost">Tạo lại</button>
+                                    </form>
+                                    
+                                    <form method="post" action="/Books/DeleteUpload/@item.Id" onsubmit="return confirm('Xóa sách này khỏi thư viện cá nhân?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="zen-btn zen-btn-ghost">Xóa</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="zen-upload-empty">
+                    <div style="color: var(--zen-border-hover); margin-bottom: 16px;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                    </div>
+                    <strong>Chưa có sách cá nhân</strong>
+                    <span>Danh sách và tiến trình xử lý sách của bạn sẽ xuất hiện tại đây sau khi bạn tải file lên ở bên trái.</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    private static bool CanRead(BookProcessingStatus status)
+    {
+        return status is BookProcessingStatus.SummaryReady or BookProcessingStatus.GeneratingAudio or BookProcessingStatus.Ready;
+    }
+
+    private static bool IsProcessing(BookProcessingStatus status)
+    {
+        return status is BookProcessingStatus.Uploaded
+            or BookProcessingStatus.ExtractingText
+            or BookProcessingStatus.Extracted
+            or BookProcessingStatus.Summarizing
+            or BookProcessingStatus.GeneratingAudio;
+    }
+
+    private static int ResolveProgress(UserUploadBookItem item)
+    {
+        return Math.Clamp(item.OverallProgressPercent, 0, 100);
+    }
+
+    private static string GetStatusClass(BookProcessingStatus status)
+    {
+        return status switch
+        {
+            BookProcessingStatus.Failed => "is-failed",
+            BookProcessingStatus.SummaryReady or BookProcessingStatus.Ready => "is-ready",
+            _ => "is-processing"
+        };
+    }
+
+    private static string GetFileTypeClass(string extension)
+    {
+        return extension switch
+        {
+            ".pdf" => "is-pdf",
+            ".epub" => "is-epub",
+            ".txt" => "is-txt",
+            _ => "is-file"
+        };
+    }
+
+    private static string GetInitials(string title)
+    {
+        var words = (title ?? string.Empty)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Take(2)
+            .Select(word => char.ToUpperInvariant(word[0]).ToString());
+
+        var initials = string.Concat(words);
+        return string.IsNullOrWhiteSpace(initials) ? "LI" : initials;
+    }
+
+    private static bool HasFailedJob(UserUploadBookItem item)
+    {
+        return item.ProcessingStatus == BookProcessingStatus.Failed ||
+            item.LatestJobStatus == ProcessingJobStatus.Failed;
+    }
+
+    private static string GetStatusText(BookProcessingStatus status)
+    {
+        return status switch
+        {
+            BookProcessingStatus.Uploaded => "Đã nhận file",
+            BookProcessingStatus.ExtractingText => "Đang trích xuất",
+            BookProcessingStatus.Extracted => "Đã trích xuất",
+            BookProcessingStatus.Summarizing => "Đang tóm tắt",
+            BookProcessingStatus.SummaryReady => "Đã có tóm tắt",
+            BookProcessingStatus.GeneratingAudio => "Đang tạo audio",
+            BookProcessingStatus.Ready => "Sẵn sàng",
+            BookProcessingStatus.Failed => "Có lỗi",
+            _ => "Đang chuẩn bị"
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('book-file-input');
+            const dropzone = document.getElementById('central-dropzone');
+            const formState = document.getElementById('central-form');
+            const previewFilename = document.getElementById('preview-filename');
+            const previewFilesize = document.getElementById('preview-filesize');
+            const changeBtn = document.getElementById('preview-change-btn');
+            const titleInput = document.querySelector('input[name="Title"]');
+
+            if (!fileInput || !dropzone || !formState) return;
+
+            const handleFile = (file) => {
+                if (!file) return;
+
+                if (previewFilename) previewFilename.textContent = file.name;
+                if (previewFilesize) {
+                    const sizeKB = (file.size / 1024).toFixed(1);
+                    previewFilesize.textContent = sizeKB + ' KB';
+                }
+                
+                if (titleInput && !titleInput.value) {
+                    let nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
+                    if (!nameWithoutExt) nameWithoutExt = file.name;
+                    titleInput.value = nameWithoutExt;
+                }
+
+                // If dropzone is flex, wait, it might be block. Usually flex in LemonInk.
+                dropzone.style.display = 'none';
+                formState.style.display = 'block';
+            };
+
+            fileInput.addEventListener('change', function(e) {
+                if (this.files && this.files.length > 0) {
+                    handleFile(this.files[0]);
+                }
+            });
+
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('is-dragover');
+            });
+            
+            dropzone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('is-dragover');
+            });
+            
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('is-dragover');
+                
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFile(fileInput.files[0]);
+                }
+            });
+
+            if (changeBtn) {
+                changeBtn.addEventListener('click', () => {
+                    fileInput.value = '';
+                    if (titleInput) titleInput.value = '';
+                    dropzone.style.display = ''; // revert to stylesheet display
+                    formState.style.display = 'none';
+                });
+            }
+        });
+    </script>
+    <script src="~/js/upload-status.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,287 @@
+@using Microsoft.AspNetCore.Identity
+@using ZenRead.Entities
+@inject UserManager<ApplicationUser> LayoutUserManager
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="LemonInk — Nắm bắt tinh hoa tri thức từ những cuốn sách hay nhất thế giới chỉ trong 15 phút." />
+    <title>@ViewData["Title"] — LemonInk</title>
+    <link rel="icon" type="image/png" href="/favicon.png?v=20260513-icon2" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260513-icon2" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/animations.css" asp-append-version="true" />
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+        var isLoggedIn = User.Identity?.IsAuthenticated == true;
+        var isAdmin = User.IsInRole("Admin");
+        var isPersonalSpace = (currentController == "Account" && currentAction == "Profile") || 
+                              (currentController == "Books" && (currentAction == "MyLibrary" || currentAction == "Upload"));
+        var layoutUser = isLoggedIn ? await LayoutUserManager.GetUserAsync(User) : null;
+        var userName = layoutUser is null
+            ? User.Identity?.Name ?? ""
+            : string.IsNullOrWhiteSpace(layoutUser.FullName) ? layoutUser.Email ?? "" : layoutUser.FullName;
+        var userInitials = userName.Length >= 1 ? userName.Substring(0, 1).ToUpper() : "U";
+        var userAvatarUrl = layoutUser?.AvatarUrl ?? "";
+        var toastMessages = new List<object>();
+        var uploadSuccess = TempData["UploadSuccess"]?.ToString();
+        var uploadError = TempData["UploadError"]?.ToString();
+        var accountSuccess = TempData["AccountSuccess"]?.ToString();
+        var accountError = TempData["AccountError"]?.ToString();
+        var pageError = ViewData["Error"]?.ToString();
+        var globalSearchQuery = currentController == "Home" && currentAction == "Library"
+            ? Context.Request.Query["query"].ToString()
+            : string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(uploadSuccess))
+        {
+            toastMessages.Add(new { message = uploadSuccess, tone = "success" });
+        }
+
+        if (!string.IsNullOrWhiteSpace(uploadError))
+        {
+            toastMessages.Add(new { message = uploadError, tone = "error" });
+        }
+
+        if (!string.IsNullOrWhiteSpace(accountSuccess))
+        {
+            toastMessages.Add(new { message = accountSuccess, tone = "success" });
+        }
+
+        if (!string.IsNullOrWhiteSpace(accountError))
+        {
+            toastMessages.Add(new { message = accountError, tone = "error" });
+        }
+
+        if (!string.IsNullOrWhiteSpace(pageError))
+        {
+            toastMessages.Add(new { message = pageError, tone = "error" });
+        }
+    }
+
+    <!-- Progress Bar -->
+    <div class="zen-progress-bar" id="zenProgressBar"></div>
+
+    <!-- Top Navbar -->
+    <nav class="zen-navbar">
+        <div class="zen-navbar-inner">
+            <!-- Brand -->
+            <a href="/" class="zen-navbar-brand">
+                <img src="/images/LemonInk.png?v=4" alt="LemonInk" class="zen-navbar-logo" />
+            </a>
+
+            <!-- Nav Links -->
+            <ul class="zen-navbar-nav">
+                <li>
+                    <a href="/" class="zen-navbar-link @(currentController == "Home" && currentAction == "Index" ? "is-active" : "")">
+                        Trang chủ
+                    </a>
+                </li>
+                <li>
+                    <a href="/Home/Library" class="zen-navbar-link @(currentAction == "Library" ? "is-active" : "")">
+                        Thư viện
+                    </a>
+                </li>
+
+                @if (isLoggedIn)
+                {
+                    <li>
+                        <a href="/Home/Bookmarks" class="zen-navbar-link @(currentAction == "Bookmarks" ? "is-active" : "")">
+                            Đánh dấu
+                        </a>
+                    </li>
+                }
+            </ul>
+
+            <!-- Right side -->
+            <div class="zen-navbar-right">
+                <form class="zen-navbar-search" method="get" action="/Home/Library" role="search" aria-label="Tìm kiếm thư viện" data-library-search-form>
+                    <button type="submit" class="zen-navbar-search-submit" aria-label="Tìm kiếm">
+                        <svg class="zen-navbar-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </button>
+                    <input type="search" name="query" value="@globalSearchQuery" class="zen-navbar-search-input" data-library-search placeholder="Tìm sách, tác giả..." aria-label="Tìm sách hoặc tác giả" />
+                </form>
+
+                @if (isLoggedIn)
+                {
+                    <div class="zen-account-menu" data-account-menu>
+                        <button type="button" class="zen-navbar-avatar zen-account-trigger @(isPersonalSpace ? "zen-navbar-avatar--active" : "")" data-account-trigger aria-expanded="false" aria-label="Mở menu tài khoản" title="@userName">
+                            @if (!string.IsNullOrWhiteSpace(userAvatarUrl))
+                            {
+                                <img src="@userAvatarUrl" alt="" onerror="this.hidden=true; this.nextElementSibling.hidden=false;" />
+                                <span hidden>@userInitials</span>
+                            }
+                            else
+                            {
+                                @userInitials
+                            }
+                        </button>
+                        <div class="zen-account-dropdown" data-account-dropdown>
+                            <div class="zen-account-menu-header">
+                                <span>@(string.IsNullOrWhiteSpace(userName) ? "Tài khoản LemonInk" : userName)</span>
+                                <small>@(isAdmin ? "Quản trị viên" : "Bạn đọc")</small>
+                            </div>
+                            @if (isAdmin)
+                            {
+                                <a href="/Admin" class="zen-account-menu-item">
+                                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                    Bảng điều khiển
+                                </a>
+                            }
+                            <a href="/Account/Profile" class="zen-account-menu-item">
+                                <svg viewBox="0 0 24 24"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+                                Hồ sơ
+                            </a>
+                            <a href="/Books/MyLibrary" class="zen-account-menu-item">
+                                <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                                Sách của tôi
+                            </a>
+                            <form method="post" action="/Account/Logout" class="zen-account-menu-form">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="zen-account-menu-item zen-account-menu-item-button">
+                                    <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                    Đăng xuất
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <a href="/Account/Login" class="zen-navbar-login">
+                        Đăng nhập
+                    </a>
+                }
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="zen-main">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="zen-footer">
+        <div class="zen-container">
+            <div class="zen-footer-grid">
+                <div class="zen-footer-col brand-col">
+                    <img src="/images/LemonInk.png?v=4" alt="LemonInk" class="zen-footer-logo" />
+                    <p class="zen-footer-slogan">Chắt lọc tinh hoa tri thức, để mỗi lần đọc đều đi thẳng vào phần đáng nhớ nhất.</p>
+                    <div class="zen-footer-social">
+                        <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
+                        <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg></a>
+                        <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg></a>
+                    </div>
+                </div>
+                <div class="zen-footer-col">
+                    <h4>Khám phá</h4>
+                    <ul>
+                        <li><a href="/Home/Library">Thư viện</a></li>
+                        <li><a href="/Books/MyLibrary">Sách của tôi</a></li>
+                        <li><a href="/">Trang chủ</a></li>
+                        <li><a href="/Home/Bookmarks">Đánh dấu</a></li>
+                        <li><a href="/Home/Read/1">Đọc thử</a></li>
+                    </ul>
+                </div>
+                <div class="zen-footer-col">
+                    <h4>Tài khoản & Hỗ trợ</h4>
+                    <ul>
+                        <li><a href="/Home/About">Về LemonInk</a></li>
+                        <li><a href="/Home/Faq">Hỗ trợ & FAQ</a></li>
+                        <li><a href="/Account/Login">Đăng nhập</a></li>
+                        <li><a href="/Account/Register">Đăng ký</a></li>
+                        <li><a href="/Account/Profile">Hồ sơ</a></li>
+                        @if (isAdmin)
+                        {
+                            <li><a href="/Admin">Admin dashboard</a></li>
+                        }
+                    </ul>
+                </div>
+                <div class="zen-footer-col newsletter-col">
+                    <h4>Bản tin tri thức</h4>
+                    <p class="zen-newsletter-desc">Đăng ký nhận tóm tắt sách hay và bài viết chia sẻ tri thức hàng tuần.</p>
+                    <form class="zen-newsletter-form" onsubmit="event.preventDefault(); alert('Cảm ơn bạn đã đăng ký bản tin của LemonInk!');">
+                        <input type="email" id="footer-email" placeholder="Địa chỉ email của bạn..." required aria-label="Địa chỉ email" />
+                        <button type="submit" aria-label="Đăng ký">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="zen-footer-bottom">
+                <div class="zen-footer-bottom-left">
+                    <span class="zen-footer-copy">&copy; 2026 LemonInk. Nền tảng tóm tắt sách thông minh by Lemonade Inc.</span>
+                </div>
+                <div class="zen-footer-bottom-right">
+                    <div class="zen-footer-quicklinks">
+                        <a href="/Home/Terms">Điều khoản sử dụng</a>
+                        <span class="zen-quicklinks-divider">&bull;</span>
+                        <a href="/Home/Privacy">Chính sách bảo mật</a>
+                    </div>
+                    <div class="zen-status-badge">
+                        <span class="zen-status-dot"></span>
+                        <span>Trạng thái hệ thống</span>
+                    </div>
+                    <button id="zenBackToTop" class="zen-back-to-top" aria-label="Cuộn lên đầu trang">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    @if (ViewData["ChatBookId"] is not null)
+    {
+        <button id="zenChatFab" class="zen-chat-fab" type="button" aria-label="Mở Hỏi đáp AI">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+            </svg>
+            <span>Chat</span>
+        </button>
+
+        @await Html.PartialAsync("_ChatPanel")
+    }
+
+    @if (toastMessages.Count > 0)
+    {
+        <script type="application/json" id="lemonToastPayload">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(toastMessages))</script>
+    }
+    <script src="~/js/toasts.js" asp-append-version="true"></script>
+    <script src="~/js/account-menu.js" asp-append-version="true"></script>
+    <script src="~/js/progress-bar.js" asp-append-version="true"></script>
+    <script src="~/js/search-utils.js" asp-append-version="true"></script>
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+    <script src="~/js/password-strength.js" asp-append-version="true"></script>
+    @if (ViewData["ChatBookId"] is not null)
+    {
+        <script src="~/js/chat-panel.js" asp-append-version="true"></script>
+    }
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const backToTopBtn = document.getElementById('zenBackToTop');
+            if (backToTopBtn) {
+                backToTopBtn.addEventListener('click', function () {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                });
+            }
+        });
+    </script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
