@@ -197,23 +197,14 @@ http://localhost:3000
 
 ### Tài khoản demo
 
-Nếu muốn tạo tài khoản demo để thử admin dashboard ở local, bật `SeedDemoAdmin` bằng user secrets hoặc `appsettings.Development.json` local, không commit file local này lên GitHub:
-
-```bash
-dotnet user-secrets set "SeedDemoAdmin:Enabled" "true"
-dotnet user-secrets set "SeedDemoAdmin:Email" "demo.admin@lemonink.local"
-dotnet user-secrets set "SeedDemoAdmin:Password" "LemonInkDemo@2026!"
-dotnet user-secrets set "SeedDemoAdmin:FullName" "LemonInk Demo Admin"
-```
-
-Sau khi bật, thông tin đăng nhập demo là:
+Khi chạy ở môi trường `Development`, LemonInk tự seed tài khoản admin demo để người clone repo có thể vào admin dashboard:
 
 ```text
 Email: demo.admin@lemonink.local
 Mật khẩu: LemonInkDemo@2026!
 ```
 
-Tài khoản này chỉ được gán role `Admin`, dùng cho demo local và được điều khiển bằng cấu hình `SeedDemoAdmin:Enabled`. Không dùng tài khoản demo cho môi trường production.
+Tài khoản này chỉ được gán role `Admin` và chỉ được seed trong môi trường `Development`. Không dùng tài khoản demo cho môi trường production.
 
 ## Ghi chú môi trường
 

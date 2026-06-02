@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ZenRead.Entities;
@@ -85,7 +86,13 @@ public static class SeedData
     private static async Task SeedDemoAdminUserAsync(IServiceProvider services)
     {
         var configuration = services.GetRequiredService<IConfiguration>();
+        var environment = services.GetRequiredService<IWebHostEnvironment>();
         if (!configuration.GetValue("SeedDemoAdmin:Enabled", false))
+        {
+            return;
+        }
+
+        if (!environment.IsDevelopment())
         {
             return;
         }
